@@ -2,6 +2,7 @@ import React from "react";
 import { Card } from "primereact/card";
 import icon from "../../assets/icon.png";
 import NavBar from "../navbar";
+import { Divider } from "primereact/divider";
 
 const subtitle = () => {
   return (
@@ -25,12 +26,13 @@ const subtitle = () => {
 const Root = () => {
   return (
     <>
-      <div className="flex items-stretch gap-4 justify-between">
+      <div className="flex items-stretch gap-2 justify-between">
         <Card
           title={NavBar}
           subTitle={subtitle}
           className="md:w-25rem w-7/10"
         ></Card>
+        <Divider layout="vertical" />
         <div className="w-3/10">
           <img src={icon} className="rounded-3xl" />
         </div>
