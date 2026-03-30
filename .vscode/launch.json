@@ -16,6 +16,13 @@
       "webRoot": "${workspaceFolder}/src",
       "sourceMaps": true,
       "timeout": 30000
+    },
+    {
+      "name": "Vite: Lint (Bun)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run lint",
+      "cwd": "${workspaceFolder}"
     }
   ],
   "compounds": [
