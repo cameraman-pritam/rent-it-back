@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vite: Run Server (Bun)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Browser: Debug React",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://dev.localhost:1355",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMaps": true,
+      "timeout": 30000
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": ["Vite: Run Server (Bun)", "Browser: Debug React"]
+    }
+  ]
+}
