@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import Root from "../structure/root";
-import { supabase } from "../../utils/supabase"; // <-- Updated import
+import { AUTH_API_URL } from "../../utils/db"; // <-- Updated import
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,46 +19,39 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      const action = isLogin ? "login" : "signup";
+      const payload = { email, password };
+      if (!isLogin) {
+        payload.name = name;
+      }
+
+      const response = await fetch(AUTH_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Action': action,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP error! status: ${response.status}`);
+      }
+
       if (isLogin) {
-        // --- LOGIN LOGIC ---
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        console.log("Logged in successfully:", data.user);
+        console.log("Logged in successfully:", result.user);
         alert("Logged in successfully!");
-
         // TODO: Redirect user or update global auth state here
       } else {
-        // --- SIGNUP LOGIC ---
-        const nameParts = name.trim().split(" ");
-        const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(" ") || "";
-
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            },
-          },
-        });
-
-        if (error) throw error;
-
-        console.log("User created successfully:", data.user);
-        // Note: Depending on your Supabase settings, they might need to verify their email
+        console.log("User created successfully:", result.user);
         alert("Account created successfully! You can now log in.");
-        setIsLogin(true);
+        setIsLogin(true); // Switch to login form after successful signup
       }
+
     } catch (error) {
       console.error("Auth Error:", error);
-      // Supabase returns nice error messages we can display directly
       alert(error.message || "An error occurred during authentication.");
     } finally {
       setLoading(false);
