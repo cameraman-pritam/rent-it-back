@@ -38,14 +38,9 @@ const NavBar = () => {
   const end = (
     <div className="flex gap-2">
       <Button
-        label="Sign In"
-        className="p-button-text hover:text-blue-500"
-        onClick={() => navigate("/signin")}
-      />
-      <Button
-        label="Sign Up"
+        label="Sign Up | Sign In"
         className="p-button-raised p-button-info"
-        onClick={() => navigate("/signup")}
+        onClick={() => navigate("/auth")}
       />
     </div>
   );

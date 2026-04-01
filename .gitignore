@@ -24,3 +24,5 @@ dist-ssr
 .env
 
 bun.lock
+
+gemini.txt
