@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import Root from "../structure/root";
-import { AUTH_API_URL } from "../../utils/db"; // <-- Updated import
+import { supabase } from "../../utils/supabase"; // <-- Updated import
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,34 +19,37 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const action = isLogin ? "login" : "signup";
-      const payload = { email, password };
-      if (!isLogin) {
-        payload.name = name;
+      let response;
+      if (isLogin) {
+        response = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      } else {
+        response = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
+        });
       }
 
-      const response = await fetch(AUTH_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Action': action,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { data, error } = response;
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || `HTTP error! status: ${response.status}`);
+      if (error) {
+        throw error;
       }
 
       if (isLogin) {
-        console.log("Logged in successfully:", result.user);
+        console.log("Logged in successfully:", data.user);
         alert("Logged in successfully!");
         // TODO: Redirect user or update global auth state here
       } else {
-        console.log("User created successfully:", result.user);
-        alert("Account created successfully! You can now log in.");
+        console.log("User created successfully:", data.user);
+        alert("Account created successfully! Please check your email to verify your account.");
         setIsLogin(true); // Switch to login form after successful signup
       }
 
