@@ -5,13 +5,20 @@ import { Button } from "primereact/button";
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import Root from "../structure/root";
-import { supabase } from "../../utils/supabase"; // <-- Updated import
+import { FloatLabel } from "primereact/floatlabel";
+import { auth } from "../../utils/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import Swal from "sweetalert2";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -21,38 +28,22 @@ export default function Auth() {
     try {
       let response;
       if (isLogin) {
-        response = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        response = await signInWithEmailAndPassword(auth, email, password);
       } else {
-        response = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-            },
-          },
-        });
-      }
-
-      const { data, error } = response;
-
-      if (error) {
-        throw error;
+        response = await createUserWithEmailAndPassword(auth, email, password);
       }
 
       if (isLogin) {
-        console.log("Logged in successfully:", data.user);
-        alert("Logged in successfully!");
+        console.log("Logged in successfully:", response.user);
+        Swal.fire({ title: "Success!", text: "Logged in successfully!" });
         // TODO: Redirect user or update global auth state here
       } else {
-        console.log("User created successfully:", data.user);
-        alert("Account created successfully! Please check your email to verify your account.");
+        console.log("User created successfully:", response.user);
+        alert(
+          "Account created successfully! Please check your email to verify your account."
+        );
         setIsLogin(true); // Switch to login form after successful signup
       }
-
     } catch (error) {
       console.error("Auth Error:", error);
       alert(error.message || "An error occurred during authentication.");
@@ -107,59 +98,89 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {!isLogin && (
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="name"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Full Name
-                </label>
-                <InputText
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  required={!isLogin}
-                />
+                <FloatLabel>
+                  {" "}
+                  <label
+                    htmlFor="name"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Full Name
+                  </label>
+                  <InputText
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    required={!isLogin}
+                  />
+                </FloatLabel>
               </div>
             )}
 
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
-              <InputText
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required
-              />
+              <FloatLabel>
+                {" "}
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Email Address
+                </label>
+                <InputText
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </FloatLabel>
             </div>
+            {!isLogin && (
+              <div className="flex flex-col gap-2">
+                <FloatLabel>
+                  <label
+                    htmlFor="number"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Mobile Number
+                  </label>
 
+                  <InputText
+                    id="number"
+                    type="mobile"
+                    keyfilter="num"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    placeholder="+91 99999 99999"
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </FloatLabel>
+              </div>
+            )}
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <Password
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                toggleMask
-                feedback={!isLogin}
-                inputClassName="w-full p-2 border border-gray-300 rounded-md"
-                className="w-full"
-                required
-              />
+              <FloatLabel>
+                {" "}
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <Password
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  feedback={!isLogin}
+                  inputClassName="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full"
+                  required
+                />
+              </FloatLabel>
             </div>
 
             <Button
