@@ -6,34 +6,27 @@ import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import Root from "../structure/root";
 import { FloatLabel } from "primereact/floatlabel";
-import { auth } from "../../utils/firebase";
+import { auth, db } from "../../utils/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPhoneNumber,
-  RecaptchaVerifier, // 1. Import RecaptchaVerifier here
+  onAuthStateChanged,
 } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { onAuthStateChanged } from "firebase/auth";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = React.useState(true);
   const [user, setUser] = React.useState(null);
+
+  // Form States
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
   const [number, setNumber] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
+  const [address, setAddress] = React.useState("");
 
-  // 2. Initialise reCAPTCHA safely when the component loads
-  React.useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container"
-      );
-    }
-  }, []);
+  const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -47,40 +40,49 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      let response;
       if (isLogin) {
-        response = await signInWithEmailAndPassword(auth, email, password);
+        // --- LOGIN LOGIC ---
+        const response = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         console.log("Logged in successfully:", response.user);
         Swal.fire({ title: "Success!", text: "Logged in successfully!" });
       } else {
-        if (email) {
-          response = await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
-          );
-          console.log("User created successfully:", response.user);
-          alert(
-            "Account created successfully! Please check your email to verify your account."
-          );
-          setIsLogin(true);
-        } else {
-          // 3. Use the initialised appVerifier here
-          const appVerifier = window.recaptchaVerifier;
-          const confirmationResult = await signInWithPhoneNumber(
-            auth,
-            number,
-            appVerifier
-          );
-          window.confirmationResult = confirmationResult;
+        // --- SIGNUP LOGIC ---
+        // 1. Create the secure auth account with Email & Password
+        const response = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        console.log("Auth account created:", response.user.uid);
 
-          alert("SMS sent! (Note: We need an OTP input to finish this!)");
-          // Notice we don't say "account created" yet, because they still need to enter the OTP!
-        }
+        // 2. Save the extra profile details to the Firestore 'users' collection
+        await setDoc(doc(db, "users", response.user.uid), {
+          name: name,
+          email: email,
+          number: number,
+          address: address,
+          createdAt: new Date().toISOString(),
+        });
+
+        Swal.fire({
+          title: "Account Created!",
+          text: "Your profile has been saved successfully.",
+          icon: "success",
+        });
+
+        setIsLogin(true); // Flip back to login view
       }
     } catch (error) {
       console.error("Auth Error:", error);
-      alert(error.message || "An error occurred during authentication.");
+      Swal.fire({
+        title: "Error",
+        text: error.message || "An error occurred.",
+        icon: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -164,29 +166,52 @@ export default function Auth() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  required
                 />
               </FloatLabel>
             </div>
 
             {!isLogin && (
-              <div className="flex flex-col gap-2">
-                <FloatLabel>
-                  <label
-                    htmlFor="number"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Mobile Number
-                  </label>
-                  <InputText
-                    id="number"
-                    type="tel"
-                    value={number}
-                    onChange={(e) => setNumber(e.target.value)}
-                    placeholder="+91 99999 99999"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </FloatLabel>
-              </div>
+              <>
+                <div className="flex flex-col gap-2">
+                  <FloatLabel>
+                    <label
+                      htmlFor="number"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Mobile Number
+                    </label>
+                    <InputText
+                      id="number"
+                      type="tel"
+                      value={number}
+                      onChange={(e) => setNumber(e.target.value)}
+                      placeholder="+91 99999 99999"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required={!isLogin}
+                    />
+                  </FloatLabel>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <FloatLabel>
+                    <label
+                      htmlFor="address"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Full Address
+                    </label>
+                    <InputText
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Your street address"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required={!isLogin}
+                    />
+                  </FloatLabel>
+                </div>
+              </>
             )}
 
             <div className="flex flex-col gap-2">
@@ -209,9 +234,6 @@ export default function Auth() {
                 />
               </FloatLabel>
             </div>
-
-            {/* 4. The container for the reCAPTCHA to attach itself to */}
-            <div id="recaptcha-container"></div>
 
             <Button
               label={
