@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
+  signOut,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
@@ -35,54 +36,40 @@ export default function Auth() {
     return () => unsubscribe();
   }, []);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    Swal.fire("Logged Out", "See you again!", "success");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (isLogin) {
-        // --- LOGIN LOGIC ---
-        const response = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        console.log("Logged in successfully:", response.user);
+        await signInWithEmailAndPassword(auth, email, password);
         Swal.fire({ title: "Success!", text: "Logged in successfully!" });
       } else {
-        // --- SIGNUP LOGIC ---
-        // 1. Create the secure auth account with Email & Password
         const response = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
-        console.log("Auth account created:", response.user.uid);
-
-        // 2. Save the extra profile details to the Firestore 'users' collection
         await setDoc(doc(db, "users", response.user.uid), {
-          name: name,
-          email: email,
-          number: number,
-          address: address,
+          name,
+          email,
+          number,
+          address,
           createdAt: new Date().toISOString(),
         });
-
         Swal.fire({
           title: "Account Created!",
-          text: "Your profile has been saved successfully.",
+          text: "Profile saved successfully.",
           icon: "success",
         });
-
-        setIsLogin(true); // Flip back to login view
+        setIsLogin(true);
       }
     } catch (error) {
-      console.error("Auth Error:", error);
-      Swal.fire({
-        title: "Error",
-        text: error.message || "An error occurred.",
-        icon: "error",
-      });
+      Swal.fire({ title: "Error", text: error.message, icon: "error" });
     } finally {
       setLoading(false);
     }
@@ -124,127 +111,156 @@ export default function Auth() {
     <>
       <Root />
       <div className="flex min-h-screen items-center justify-center p-4">
-        <Card
-          title={cardTitle}
-          footer={cardFooter}
-          className="w-full max-w-md shadow-lg rounded-xl"
-        >
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {!isLogin && (
+        {user ? (
+          /* --- LOGGED IN VIEW --- */
+          <Card
+            title="User Data"
+            className="w-full max-w-md shadow-lg rounded-xl text-center"
+          >
+            <div className="flex flex-col gap-4">
+              <p className="text-white">
+                Logged in as: <strong>{user.email}</strong>
+              </p>
+              <p>
+                Name: <strong>{user.name}</strong>
+              </p>
+              <p>
+                Mobile Number: <strong>{user.number}</strong>
+              </p>
+              <p>
+                Address: <strong>{user.address}</strong>
+              </p>
+              <Button
+                label="Logout"
+                onClick={handleLogout}
+                className="w-full rounded-md bg-red-500 p-3 font-semibold text-white hover:bg-red-600 transition-colors"
+              />
+            </div>
+          </Card>
+        ) : (
+          /* --- ORIGINAL LOGIN/SIGNUP DESIGN --- */
+          <Card
+            title={cardTitle}
+            footer={cardFooter}
+            className="w-full max-w-md shadow-lg rounded-xl"
+          >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {!isLogin && (
+                <div className="flex flex-col gap-2">
+                  <FloatLabel>
+                    <label
+                      htmlFor="name"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Full Name
+                    </label>
+                    <InputText
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required={!isLogin}
+                    />
+                  </FloatLabel>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2">
                 <FloatLabel>
                   <label
-                    htmlFor="name"
+                    htmlFor="email"
                     className="text-sm font-medium text-gray-700"
                   >
-                    Full Name
+                    Email Address
                   </label>
                   <InputText
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    required={!isLogin}
+                    required
                   />
                 </FloatLabel>
               </div>
-            )}
 
-            <div className="flex flex-col gap-2">
-              <FloatLabel>
-                <label
-                  htmlFor="email"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Email Address
-                </label>
-                <InputText
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  required
-                />
-              </FloatLabel>
-            </div>
+              {!isLogin && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <FloatLabel>
+                      <label
+                        htmlFor="number"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Mobile Number
+                      </label>
+                      <InputText
+                        id="number"
+                        type="tel"
+                        value={number}
+                        onChange={(e) => setNumber(e.target.value)}
+                        placeholder="+91 99999 99999"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        required={!isLogin}
+                      />
+                    </FloatLabel>
+                  </div>
 
-            {!isLogin && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <FloatLabel>
-                    <label
-                      htmlFor="number"
-                      className="text-sm font-medium text-gray-700"
-                    >
-                      Mobile Number
-                    </label>
-                    <InputText
-                      id="number"
-                      type="tel"
-                      value={number}
-                      onChange={(e) => setNumber(e.target.value)}
-                      placeholder="+91 99999 99999"
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required={!isLogin}
-                    />
-                  </FloatLabel>
-                </div>
+                  <div className="flex flex-col gap-2">
+                    <FloatLabel>
+                      <label
+                        htmlFor="address"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Full Address
+                      </label>
+                      <InputText
+                        id="address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Your street address"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        required={!isLogin}
+                      />
+                    </FloatLabel>
+                  </div>
+                </>
+              )}
 
-                <div className="flex flex-col gap-2">
-                  <FloatLabel>
-                    <label
-                      htmlFor="address"
-                      className="text-sm font-medium text-gray-700"
-                    >
-                      Full Address
-                    </label>
-                    <InputText
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Your street address"
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required={!isLogin}
-                    />
-                  </FloatLabel>
-                </div>
-              </>
-            )}
+              <div className="flex flex-col gap-2">
+                <FloatLabel>
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Password
+                  </label>
+                  <Password
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    feedback={!isLogin}
+                    inputClassName="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full"
+                    required
+                  />
+                </FloatLabel>
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <FloatLabel>
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <Password
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  feedback={!isLogin}
-                  inputClassName="w-full p-2 border border-gray-300 rounded-md"
-                  className="w-full"
-                  required
-                />
-              </FloatLabel>
-            </div>
-
-            <Button
-              label={
-                loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"
-              }
-              type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded-md bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700 transition-colors"
-            />
-          </form>
-        </Card>
+              <Button
+                label={
+                  loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"
+                }
+                type="submit"
+                disabled={loading}
+                className="mt-2 w-full rounded-md bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+              />
+            </form>
+          </Card>
+        )}
       </div>
     </>
   );
