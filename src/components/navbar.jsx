@@ -28,6 +28,11 @@ const NavBar = () => {
       icon: "pi pi-info-circle",
       command: () => navigate("/about"),
     },
+    {
+      label: "List Items",
+      icon: "pi pi-cart-plus",
+      command: () => navigate("/add"),
+    },
   ];
 
   const start = (

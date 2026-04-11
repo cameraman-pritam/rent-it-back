@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Root from "../structure/root";
 // PrimeReact Imports
 import { Button } from "primereact/button";
@@ -8,8 +8,114 @@ import Planter from "../../assets/nature.png";
 // Make sure to import PrimeIcons in your main app file if you haven't!
 import "primeicons/primeicons.css";
 import { Divider } from "primereact/divider";
+import { db } from "../../utils/firebase";
+import { Chart } from "primereact/chart";
+import { collection, getDocs } from "firebase/firestore";
 
 const Home = () => {
+  // Moved these INSIDE the component and added the missing ones!
+  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({});
+  const [chartOptions, setChartOptions] = useState({});
+
+  useEffect(() => {
+    const fetchAndProcessUsers = async () => {
+      try {
+        // 1. Hit Firestore for the users collection
+        const querySnapshot = await getDocs(collection(db, "users"));
+
+        // 2. Set up an array of months to count them up
+        const monthCounts = new Array(12).fill(0); // [0, 0, 0... for Jan-Dec]
+
+        querySnapshot.forEach((doc) => {
+          const userData = doc.data();
+
+          if (userData.createdAt) {
+            let date;
+
+            // Check if it's a fancy Firebase Timestamp
+            if (typeof userData.createdAt.toDate === "function") {
+              date = userData.createdAt.toDate();
+            } else {
+              // Otherwise, just parse it as a normal JavaScript date
+              date = new Date(userData.createdAt);
+            }
+
+            // Make sure the date is actually valid before counting it
+            if (!isNaN(date)) {
+              const month = date.getMonth(); // Returns 0 for Jan, 11 for Dec
+              monthCounts[month] += 1;
+            }
+          }
+        });
+
+        // 3. Plug the crunched data into PrimeReact's format
+        const data = {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets: [
+            {
+              label: "New Users",
+              data: monthCounts,
+              fill: true,
+              borderColor: "#38bdf8", // Tailwind sky-400
+              backgroundColor: "rgba(56, 189, 248, 0.2)", // Faded sky-400 for the fill
+              tension: 0.4, // Makes the line smooth and curvy
+              pointBackgroundColor: "#fb923c", // Tailwind orange-400 for the dots
+              pointBorderColor: "#0f172a", // slate-950
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: "#fb923c",
+            },
+          ],
+        };
+
+        // 4. Style the chart to match your dark SaaS theme
+        const options = {
+          maintainAspectRatio: false,
+          aspectRatio: 0.6,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#94a3b8", // Tailwind slate-400
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(51, 65, 85, 0.5)" }, // slate-700 with opacity
+            },
+            y: {
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(51, 65, 85, 0.5)" },
+            },
+          },
+        };
+
+        setChartData(data);
+        setChartOptions(options);
+        setLoading(false);
+      } catch (error) {
+        console.error("Bro, Firestore threw an error:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAndProcessUsers();
+  }, []);
+
   return (
     <>
       <Root />
@@ -78,11 +184,38 @@ const Home = () => {
         </div>
       </div>
       <Divider />
-      <div className="bg-[#171c24] rounded-3xl">
+      <div className="bg-inherit">
         <p className="text-3xl">Circular Living Made Simple</p>
         <p className="text-gray-400">
           Smoother Renting process, at your Fingertips.
         </p>
+        <br />
+        <div className="w-full max-w-4xl mx-auto p-6 bg-inherit rounded-3xl border border-slate-800 shadow-2xl font-sans">
+          <div className="mb-6">
+            <h2 className="text-2xl font-extrabold text-white tracking-tight">
+              User Growth
+            </h2>
+            <p className="text-slate-400 text-sm font-medium">
+              New signups over the last 12 months
+            </p>
+          </div>
+
+          <div className="relative h-[400px] w-full">
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* Super simple Tailwind loading spinner */}
+                <div className="w-10 h-10 border-4 border-slate-700 border-t-sky-400 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <Chart
+                type="line"
+                data={chartData}
+                options={chartOptions}
+                className="h-full w-full"
+              />
+            )}
+          </div>
+        </div>
       </div>
     </>
   );
