@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
 import Root from "../structure/root";
-// PrimeReact Imports
 import { Button } from "primereact/button";
 import { Chip } from "primereact/chip";
 import { Image } from "primereact/image";
 import Planter from "../../assets/nature.png";
-// Make sure to import PrimeIcons in your main app file if you haven't!
 import "primeicons/primeicons.css";
 import { Divider } from "primereact/divider";
-import { db } from "../../utils/firebase";
 import { Chart } from "primereact/chart";
-import { collection, getDocs } from "firebase/firestore";
+import { supabase } from "../../utils/supabase";
 
 const Home = () => {
-  // Moved these INSIDE the component and added the missing ones!
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState({});
   const [chartOptions, setChartOptions] = useState({});
@@ -21,35 +17,25 @@ const Home = () => {
   useEffect(() => {
     const fetchAndProcessUsers = async () => {
       try {
-        // 1. Hit Firestore for the users collection
-        const querySnapshot = await getDocs(collection(db, "users"));
+        const { data: users, error } = await supabase.from("users").select("*");
 
-        // 2. Set up an array of months to count them up
-        const monthCounts = new Array(12).fill(0); // [0, 0, 0... for Jan-Dec]
+        if (error) throw error;
 
-        querySnapshot.forEach((doc) => {
-          const userData = doc.data();
+        const monthCounts = new Array(12).fill(0);
 
-          if (userData.createdAt) {
-            let date;
+        if (users) {
+          users.forEach((userData) => {
+            if (userData.createdAt) {
+              const date = new Date(userData.createdAt);
 
-            // Check if it's a fancy Firebase Timestamp
-            if (typeof userData.createdAt.toDate === "function") {
-              date = userData.createdAt.toDate();
-            } else {
-              // Otherwise, just parse it as a normal JavaScript date
-              date = new Date(userData.createdAt);
+              if (!isNaN(date)) {
+                const month = date.getMonth();
+                monthCounts[month] += 1;
+              }
             }
+          });
+        }
 
-            // Make sure the date is actually valid before counting it
-            if (!isNaN(date)) {
-              const month = date.getMonth(); // Returns 0 for Jan, 11 for Dec
-              monthCounts[month] += 1;
-            }
-          }
-        });
-
-        // 3. Plug the crunched data into PrimeReact's format
         const data = {
           labels: [
             "Jan",
@@ -70,32 +56,31 @@ const Home = () => {
               label: "New Users",
               data: monthCounts,
               fill: true,
-              borderColor: "#38bdf8", // Tailwind sky-400
-              backgroundColor: "rgba(56, 189, 248, 0.2)", // Faded sky-400 for the fill
-              tension: 0.4, // Makes the line smooth and curvy
-              pointBackgroundColor: "#fb923c", // Tailwind orange-400 for the dots
-              pointBorderColor: "#0f172a", // slate-950
+              borderColor: "#38bdf8",
+              backgroundColor: "rgba(56, 189, 248, 0.2)",
+              tension: 0.4,
+              pointBackgroundColor: "#fb923c",
+              pointBorderColor: "#0f172a",
               pointHoverBackgroundColor: "#fff",
               pointHoverBorderColor: "#fb923c",
             },
           ],
         };
 
-        // 4. Style the chart to match your dark SaaS theme
         const options = {
           maintainAspectRatio: false,
           aspectRatio: 0.6,
           plugins: {
             legend: {
               labels: {
-                color: "#94a3b8", // Tailwind slate-400
+                color: "#94a3b8",
               },
             },
           },
           scales: {
             x: {
               ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(51, 65, 85, 0.5)" }, // slate-700 with opacity
+              grid: { color: "rgba(51, 65, 85, 0.5)" },
             },
             y: {
               ticks: { color: "#94a3b8" },
@@ -108,7 +93,7 @@ const Home = () => {
         setChartOptions(options);
         setLoading(false);
       } catch (error) {
-        console.error("Bro, Firestore threw an error:", error);
+        console.error(error);
         setLoading(false);
       }
     };
@@ -121,9 +106,7 @@ const Home = () => {
       <Root />
       <div className="min-h-screen bg-inherit text-white flex items-center justify-center p-6 md:p-12 overflow-hidden font-sans">
         <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
-          {/* Left Column: Content */}
           <div className="flex flex-col items-start z-10 w-full">
-            {/* Swapped raw div for a PrimeReact Chip */}
             <Chip
               label="The Digital Commons"
               className="bg-slate-800/80 text-orange-400 text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-md mb-8 border-none"
@@ -141,7 +124,6 @@ const Home = () => {
               sustainable future.
             </p>
 
-            {/* Swapped raw buttons for PrimeReact Buttons for those clean ripple effects */}
             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto">
               <Button
                 label="Start Browsing"
@@ -156,10 +138,8 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Right Column: Visuals */}
           <div className="relative mt-20 lg:mt-0 flex justify-center lg:justify-end w-full">
             <div className="relative w-full max-w-lg lg:max-w-xl aspect-square rounded-4xl overflow-hidden bg-emerald-800 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-              {/* PrimeReact Image component with the 'preview' prop enabled */}
               <Image
                 src={Planter}
                 alt="Sustainable products"
@@ -169,7 +149,6 @@ const Home = () => {
 
             <div className="absolute -bottom-16 lg:-bottom-12 -left-4 lg:-left-12 bg-slate-800 p-6 lg:p-8 rounded-2xl shadow-2xl w-11/12 max-w-sm border border-slate-700 -rotate-2 hover:rotate-0 transition-transform duration-500 z-20">
               <div className="flex items-center gap-3 mb-4">
-                {/* Replaced the giant SVG with a clean PrimeIcon */}
                 <i className="pi pi-verified text-orange-400 text-xl"></i>
                 <span className="text-orange-400 text-xs font-bold tracking-widest uppercase">
                   Sustainability Impact
@@ -203,7 +182,6 @@ const Home = () => {
           <div className="relative h-[400px] w-full">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
-                {/* Super simple Tailwind loading spinner */}
                 <div className="w-10 h-10 border-4 border-slate-700 border-t-sky-400 rounded-full animate-spin"></div>
               </div>
             ) : (

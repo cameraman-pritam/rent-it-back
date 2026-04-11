@@ -1,7 +1,5 @@
 import React, { useState, useRef } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Added Storage imports
-import { db, auth, storage } from "../../utils/firebase"; // Ensure 'storage' is exported from your config
+import { supabase } from "../../utils/supabase";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
@@ -11,7 +9,7 @@ const AddListing = () => {
   const toast = useRef(null);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]); // State for images
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -23,13 +21,11 @@ const AddListing = () => {
     condition: "Like New",
   });
 
-  // 🔹 Shared Styles
   const cardBase =
     "bg-slate-900/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-slate-800/60 shadow-xl transition-all";
   const inputBase =
     "w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition";
 
-  // 🔹 Handlers
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 10) {
@@ -47,19 +43,22 @@ const AddListing = () => {
   const uploadImages = async (uid) => {
     const urls = [];
     for (const file of selectedFiles) {
-      const storageRef = ref(
-        storage,
-        `listings/${uid}/${Date.now()}-${file.name}`
-      );
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
-      urls.push(url);
+      const filePath = `${uid}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage
+        .from("listings")
+        .upload(filePath, file);
+
+      if (!error) {
+        const { data } = supabase.storage
+          .from("listings")
+          .getPublicUrl(filePath);
+        urls.push(data.publicUrl);
+      }
     }
     return urls;
   };
 
   const handleSubmit = async () => {
-    // Validation
     if (!formData.title || !formData.price || !formData.location) {
       toast.current.show({
         severity: "warn",
@@ -70,7 +69,10 @@ const AddListing = () => {
       return;
     }
 
-    const user = auth.currentUser;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       toast.current.show({
         severity: "error",
@@ -84,28 +86,27 @@ const AddListing = () => {
     setLoading(true);
 
     try {
-      // 1. Upload Images first (if any)
       let imageUrls = [];
       if (selectedFiles.length > 0) {
-        imageUrls = await uploadImages(user.uid);
+        imageUrls = await uploadImages(user.id);
       }
 
-      // 2. Prepare Final Data
       const finalData = {
         ...formData,
         title: formData.title.trim(),
         location: formData.location.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
-        images: imageUrls, // Store the array of URLs
-        uid: user.uid,
-        userName: user.displayName || "Anonymous",
+        images: imageUrls,
+        uid: user.id,
+        userName: user.user_metadata?.name || "Anonymous",
         userEmail: user.email,
-        createdAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
       };
 
-      // 3. Save to Firestore
-      await addDoc(collection(db, "items"), finalData);
+      const { error } = await supabase.from("items").insert([finalData]);
+
+      if (error) throw error;
 
       toast.current.show({
         severity: "success",
@@ -114,7 +115,6 @@ const AddListing = () => {
         life: 3000,
       });
 
-      // Reset Form
       setFormData({
         title: "",
         category: "Tools",
@@ -151,7 +151,6 @@ const AddListing = () => {
     >
       <Toast ref={toast} />
 
-      {/* Header */}
       <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
         <div>
           <p className="text-sky-400 font-bold tracking-widest uppercase text-xs mb-1">
@@ -167,9 +166,7 @@ const AddListing = () => {
         </button>
       </header>
 
-      {/* Grid */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
-        {/* Media Upload */}
         <div
           onClick={() => fileInputRef.current?.click()}
           className={`${cardBase} md:col-span-5 flex flex-col justify-center items-center text-center cursor-pointer border-2 border-dashed ${
@@ -209,7 +206,6 @@ const AddListing = () => {
           </p>
         </div>
 
-        {/* Core Details */}
         <div className={`${cardBase} md:col-span-7 flex flex-col gap-5`}>
           <p className="text-lg font-semibold text-white">
             <i className="pi pi-box text-orange-400 mr-2"></i> Core Details
@@ -264,7 +260,6 @@ const AddListing = () => {
           </div>
         </div>
 
-        {/* Logistics */}
         <div className={`${cardBase} md:col-span-8`}>
           <p className="text-lg font-semibold text-white mb-5">
             <i className="pi pi-wallet text-sky-400 mr-2"></i> Logistics
@@ -329,7 +324,6 @@ const AddListing = () => {
           </div>
         </div>
 
-        {/* Condition + CTA */}
         <div className="md:col-span-4 flex flex-col gap-5">
           <div className={`${cardBase}`}>
             <p className="text-lg font-semibold text-white mb-5">

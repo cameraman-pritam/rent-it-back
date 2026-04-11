@@ -6,26 +6,15 @@ import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import Root from "../structure/root";
 import { FloatLabel } from "primereact/floatlabel";
-import { auth, db } from "../../utils/firebase";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { supabase } from "../../utils/supabase";
 import Swal from "sweetalert2";
-
-// Import your new custom hook (adjust the path if you placed the context folder elsewhere)
 import { useAuth } from "../context/AuthContext";
 
 export default function Auth() {
-  // Grab the global user and userData from your Context!
   const { user, userData } = useAuth();
-
   const [isLogin, setIsLogin] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
 
-  // Form States
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
@@ -33,7 +22,7 @@ export default function Auth() {
   const [address, setAddress] = React.useState("");
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     Swal.fire("Logged Out", "See you again!", "success");
   };
 
@@ -42,22 +31,33 @@ export default function Auth() {
     setLoading(true);
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
         Swal.fire({ title: "Success!", text: "Logged in successfully!" });
       } else {
-        const response = await createUserWithEmailAndPassword(
-          auth,
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
-          password
-        );
-        // Save the extra details to Firestore during sign-up
-        await setDoc(doc(db, "users", response.user.uid), {
-          name,
-          email,
-          number,
-          address,
-          createdAt: new Date().toISOString(),
+          password,
         });
+        if (signUpError) throw signUpError;
+
+        if (data?.user) {
+          const { error: dbError } = await supabase.from("users").insert([
+            {
+              id: data.user.id,
+              name,
+              email,
+              number,
+              address,
+              createdAt: new Date().toISOString(),
+            },
+          ]);
+          if (dbError) throw dbError;
+        }
+
         Swal.fire({
           title: "Account Created!",
           text: "Profile saved successfully.",
@@ -109,7 +109,6 @@ export default function Auth() {
       <Root />
       <div className="flex min-h-screen items-center justify-center p-4">
         {user ? (
-          /* --- LOGGED IN VIEW --- */
           <Card
             title="User Data"
             className="w-full max-w-md shadow-lg rounded-xl text-center"
@@ -119,7 +118,6 @@ export default function Auth() {
                 Logged in as: <strong>{user.email}</strong>
               </p>
 
-              {/* DISPLAY FIRESTORE DATA HERE */}
               {userData ? (
                 <>
                   <p className="text-white">
@@ -144,7 +142,6 @@ export default function Auth() {
             </div>
           </Card>
         ) : (
-          /* --- ORIGINAL LOGIN/SIGNUP DESIGN --- */
           <Card
             title={cardTitle}
             footer={cardFooter}

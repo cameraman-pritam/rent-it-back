@@ -2,14 +2,10 @@ import React from "react";
 import { Menubar } from "primereact/menubar";
 import { Button } from "primereact/button";
 import { useNavigate } from "react-router-dom";
-
-// IMPORT YOUR CUSTOM HOOK (Adjust the path if your context folder is elsewhere)
 import { useAuth } from "./context/AuthContext";
 
 const NavBar = () => {
   const navigate = useNavigate();
-
-  // PULL GLOBAL STATE FROM CONTEXT
   const { user, userData } = useAuth();
 
   const items = [
@@ -48,11 +44,9 @@ const NavBar = () => {
 
   const end = (
     <div className="flex align-items-center gap-3">
-      {/* CONDITIONALLY RENDER BASED ON LOGIN STATUS */}
       {user ? (
         <>
           <span className="font-medium text-gray-700 hidden sm:inline">
-            {/* Grab just the first name if it exists */}
             Hi, {userData?.name ? userData.name.split(" ")[0] : "User"}!
           </span>
           <Button
