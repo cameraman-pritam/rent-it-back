@@ -245,7 +245,7 @@ const AddListing = () => {
           </div>
         </header>
 
-        <div className="flex items-center gap-2 lg:grid-cols-12 gap-12">
+        <div className="flex items-center gap-2 lg:grid-cols-12">
           {/* Left Column: Form Content */}
           <div className="lg:col-span-8 space-y-12 w-7/10">
             {/* Section 1: Item Basics */}
@@ -514,7 +514,7 @@ const AddListing = () => {
                   !formData.price ||
                   !formData.location?.trim()
                 }
-                className="bg-gradient-to-br from-primary to-on-primary-container px-10 py-4 text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed border-none hover:shadow-primary/40 transition-all"
+                className="bg-linear-to-br from-primary to-on-primary-container px-10 py-4 text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed border-none hover:shadow-primary/40 transition-all"
               />
             </div>
           </div>
