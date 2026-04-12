@@ -1,29 +1,70 @@
-import React from "react";
-import { InputText } from "primereact/inputtext";
-import { Password } from "primereact/password";
-import { Button } from "primereact/button";
-import { Divider } from "primereact/divider";
-import { Card } from "primereact/card";
-import Root from "../structure/root";
-import { FloatLabel } from "primereact/floatlabel";
+import React, { Suspense, lazy, useState } from "react";
+import { Skeleton } from "primereact/skeleton";
 import { supabase } from "../../utils/supabase";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
 
+const InputText = lazy(() =>
+  import("primereact/inputtext").then((module) => ({
+    default: module.InputText,
+  }))
+);
+const Password = lazy(() =>
+  import("primereact/password").then((module) => ({
+    default: module.Password,
+  }))
+);
+const Button = lazy(() =>
+  import("primereact/button").then((module) => ({ default: module.Button }))
+);
+const Divider = lazy(() =>
+  import("primereact/divider").then((module) => ({ default: module.Divider }))
+);
+const Card = lazy(() =>
+  import("primereact/card").then((module) => ({ default: module.Card }))
+);
+const FloatLabel = lazy(() =>
+  import("primereact/floatlabel").then((module) => ({
+    default: module.FloatLabel,
+  }))
+);
+const Root = lazy(() => import("../structure/root"));
+
+const AuthSkeleton = () => (
+  <div className="flex min-h-screen items-center justify-center p-4 w-full flex-col gap-4">
+    <Skeleton width="100%" height="5rem" borderRadius="12px" />
+    <Skeleton
+      width="100%"
+      height="30rem"
+      className="max-w-md"
+      borderRadius="12px"
+    />
+  </div>
+);
+
 export default function Auth() {
   const { user, userData } = useAuth();
-  const [isLogin, setIsLogin] = React.useState(true);
-  const [loading, setLoading] = React.useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [name, setName] = React.useState("");
-  const [number, setNumber] = React.useState("");
-  const [address, setAddress] = React.useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
+  const [address, setAddress] = useState("");
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    Swal.fire("Logged Out", "See you again!", "success");
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      Swal.fire("Logged Out", "See you again!", "success");
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Could not log out correctly.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -38,25 +79,19 @@ export default function Auth() {
         if (error) throw error;
         Swal.fire({ title: "Success!", text: "Logged in successfully!" });
       } else {
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-        });
-        if (signUpError) throw signUpError;
-
-        if (data?.user) {
-          const { error: dbError } = await supabase.from("users").insert([
-            {
-              id: data.user.id,
+          options: {
+            data: {
               name,
-              email,
               number,
               address,
-              createdAt: new Date().toISOString(),
             },
-          ]);
-          if (dbError) throw dbError;
-        }
+          },
+        });
+
+        if (signUpError) throw signUpError;
 
         Swal.fire({
           title: "Account Created!",
@@ -105,7 +140,7 @@ export default function Auth() {
   );
 
   return (
-    <>
+    <Suspense fallback={<AuthSkeleton />}>
       <Root />
       <div className="flex min-h-screen items-center justify-center p-4">
         {user ? (
@@ -135,9 +170,10 @@ export default function Auth() {
               )}
 
               <Button
-                label="Logout"
+                label={loading ? "Logging out..." : "Logout"}
                 onClick={handleLogout}
-                className="w-full rounded-md bg-red-500 p-3 font-semibold text-white hover:bg-red-600 transition-colors"
+                disabled={loading}
+                className="w-full rounded-md bg-red-500 p-3 font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
               />
             </div>
           </Card>
@@ -259,12 +295,12 @@ export default function Auth() {
                 }
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full rounded-md bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+                className="mt-2 w-full rounded-md bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               />
             </form>
           </Card>
         )}
       </div>
-    </>
+    </Suspense>
   );
 }

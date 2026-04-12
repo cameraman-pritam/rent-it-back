@@ -1,9 +1,23 @@
-import React from "react";
-import { Card } from "primereact/card";
-import { Divider } from "primereact/divider";
-import Root from "../structure/root";
+import React, { Suspense, lazy } from "react";
+import { Skeleton } from "primereact/skeleton";
 
-const header = () => {
+const Card = lazy(() =>
+  import("primereact/card").then((module) => ({ default: module.Card }))
+);
+const Divider = lazy(() =>
+  import("primereact/divider").then((module) => ({ default: module.Divider }))
+);
+const Root = lazy(() => import("../structure/root"));
+
+const AboutSkeleton = () => (
+  <div className="flex flex-col gap-6 w-full">
+    <Skeleton width="100%" height="5rem" borderRadius="12px" />
+    <Skeleton width="100%" height="20rem" borderRadius="12px" />
+    <Skeleton width="100%" height="8rem" borderRadius="12px" />
+  </div>
+);
+
+const Header = () => {
   return (
     <>
       <h3 className="font-bold">
@@ -19,9 +33,9 @@ const header = () => {
 
 const About = () => {
   return (
-    <>
+    <Suspense fallback={<AboutSkeleton />}>
       <Root />
-      <Card title={header}>
+      <Card title={<Header />}>
         <p>
           Rent Back is a shopping experience for the new generation. Everytime
           you need a thing like a ladder, a drill or maybe a book you know you
@@ -58,7 +72,7 @@ const About = () => {
           so came up to this.
         </p>
       </Card>
-    </>
+    </Suspense>
   );
 };
 

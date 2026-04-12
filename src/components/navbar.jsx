@@ -1,8 +1,19 @@
-import React from "react";
-import { Menubar } from "primereact/menubar";
-import { Button } from "primereact/button";
+import React, { Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { Skeleton } from "primereact/skeleton";
+
+const Menubar = lazy(() =>
+  import("primereact/menubar").then((module) => ({
+    default: module.Menubar,
+  }))
+);
+
+const Button = lazy(() =>
+  import("primereact/button").then((module) => ({
+    default: module.Button,
+  }))
+);
 
 const NavBar = () => {
   const navigate = useNavigate();
@@ -68,12 +79,16 @@ const NavBar = () => {
 
   return (
     <div className="card mb-4 shadow-1">
-      <Menubar
-        model={items}
-        start={start}
-        end={end}
-        className="border-none px-4"
-      />
+      <Suspense
+        fallback={<Skeleton width="100%" height="4.5rem" borderRadius="8px" />}
+      >
+        <Menubar
+          model={items}
+          start={start}
+          end={end}
+          className="border-none px-4"
+        />
+      </Suspense>
     </div>
   );
 };

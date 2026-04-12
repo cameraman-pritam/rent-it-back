@@ -1,13 +1,44 @@
-import React, { useState, useEffect } from "react";
-import Root from "../structure/root";
-import { Button } from "primereact/button";
-import { Chip } from "primereact/chip";
-import { Image } from "primereact/image";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import Planter from "../../assets/nature.png";
 import "primeicons/primeicons.css";
-import { Divider } from "primereact/divider";
-import { Chart } from "primereact/chart";
 import { supabase } from "../../utils/supabase";
+import { Skeleton } from "primereact/skeleton";
+
+const Root = lazy(() => import("../structure/root"));
+const Button = lazy(() =>
+  import("primereact/button").then((module) => ({ default: module.Button }))
+);
+const Chip = lazy(() =>
+  import("primereact/chip").then((module) => ({ default: module.Chip }))
+);
+const Image = lazy(() =>
+  import("primereact/image").then((module) => ({ default: module.Image }))
+);
+const Divider = lazy(() =>
+  import("primereact/divider").then((module) => ({ default: module.Divider }))
+);
+const Chart = lazy(() =>
+  import("primereact/chart").then((module) => ({ default: module.Chart }))
+);
+
+const HomeSkeleton = () => (
+  <div className="min-h-screen bg-inherit p-6 md:p-12 w-full flex flex-col items-center">
+    <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+      <div className="flex flex-col gap-6 w-full">
+        <Skeleton width="12rem" height="2rem" borderRadius="16px" />
+        <Skeleton width="100%" height="8rem" />
+        <Skeleton width="80%" height="4rem" />
+        <div className="flex gap-4">
+          <Skeleton width="12rem" height="4rem" borderRadius="2rem" />
+          <Skeleton width="12rem" height="4rem" borderRadius="2rem" />
+        </div>
+      </div>
+      <div className="w-full">
+        <Skeleton width="100%" height="30rem" borderRadius="2rem" />
+      </div>
+    </div>
+  </div>
+);
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
@@ -102,7 +133,7 @@ const Home = () => {
   }, []);
 
   return (
-    <>
+    <Suspense fallback={<HomeSkeleton />}>
       <Root />
       <div className="min-h-screen bg-inherit text-white flex items-center justify-center p-6 md:p-12 overflow-hidden font-sans">
         <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
@@ -179,10 +210,10 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="relative h-[400px] w-full">
+          <div className="relative h-100 w-full">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-slate-700 border-t-sky-400 rounded-full animate-spin"></div>
+                <Skeleton width="100%" height="100%" borderRadius="16px" />
               </div>
             ) : (
               <Chart
@@ -195,7 +226,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-    </>
+    </Suspense>
   );
 };
 
