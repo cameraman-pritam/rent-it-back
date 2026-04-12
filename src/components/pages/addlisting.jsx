@@ -1,53 +1,108 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { supabase } from "../../utils/supabase";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
+import { Button } from "primereact/button";
 import Root from "../structure/root";
+import sustain from "../../assets/3726696.jpg";
 
 const AddListing = () => {
   const toast = useRef(null);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [attachments, setAttachments] = useState([]); // {id, file, preview}
+  const [isDragging, setIsDragging] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     category: "Tools",
     description: "",
     transactionType: "Rent",
-    price: "",
+    price: null,
     location: "",
     condition: "Like New",
   });
 
-  const cardBase =
-    "bg-slate-900/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-slate-800/60 shadow-xl transition-all";
-  const inputBase =
-    "w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition";
+  const categoryOptions = [
+    { label: "Tools", value: "Tools" },
+    { label: "Electronics", value: "Electronics" },
+    { label: "Outdoor Gear", value: "Outdoor Gear" },
+    { label: "Vehicle", value: "Vehicle" },
+    { label: "Home Goods", value: "Home Goods" },
+  ];
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 10) {
+  // Cleanup object URLs on unmount
+  const attachmentsRef = useRef([]);
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(() => {
+    return () => {
+      attachmentsRef.current.forEach((att) => {
+        if (att.preview) URL.revokeObjectURL(att.preview);
+      });
+    };
+  }, []);
+
+  const handleFiles = (newFiles) => {
+    const imageFiles = Array.from(newFiles).filter((file) =>
+      file.type.startsWith("image/")
+    );
+
+    if (imageFiles.length === 0) return;
+
+    const currentCount = attachments.length;
+    let filesToAdd = imageFiles;
+
+    if (currentCount + imageFiles.length > 10) {
       toast.current.show({
         severity: "warn",
         summary: "Limit Reached",
-        detail: "Max 10 images allowed.",
+        detail: `Max 10 images allowed (${10 - currentCount} more possible)`,
         life: 3000,
       });
-      return;
+      filesToAdd = imageFiles.slice(0, 10 - currentCount);
+      if (filesToAdd.length === 0) return;
     }
-    setSelectedFiles(files);
+
+    const newAttachments = filesToAdd.map((file) => ({
+      id: `${Date.now()}-${Math.random().toString(36)}`,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  };
+
+  const handleFileChange = (e) => {
+    handleFiles(e.target.files);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const removeAttachment = (index) => {
+    const att = attachments[index];
+    if (att?.preview) URL.revokeObjectURL(att.preview);
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const uploadImages = async (uid) => {
     const urls = [];
-    for (const file of selectedFiles) {
-      const filePath = `${uid}/${Date.now()}-${file.name}`;
+    for (const att of attachments) {
+      const filePath = `${uid}/${Date.now()}-${att.file.name}`;
       const { error } = await supabase.storage
         .from("listings")
-        .upload(filePath, file);
+        .upload(filePath, att.file);
 
       if (!error) {
         const { data } = supabase.storage
@@ -60,7 +115,11 @@ const AddListing = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.price || !formData.location) {
+    if (
+      !formData.title?.trim() ||
+      !formData.price ||
+      !formData.location?.trim()
+    ) {
       toast.current.show({
         severity: "warn",
         summary: "Hold Up",
@@ -88,7 +147,7 @@ const AddListing = () => {
 
     try {
       let imageUrls = [];
-      if (selectedFiles.length > 0) {
+      if (attachments.length > 0) {
         imageUrls = await uploadImages(user.id);
       }
 
@@ -97,7 +156,6 @@ const AddListing = () => {
         title: formData.title.trim(),
         location: formData.location.trim(),
         description: formData.description.trim(),
-        price: parseFloat(formData.price),
         images: imageUrls,
         uid: user.id,
         userName: user.user_metadata?.name || "Anonymous",
@@ -108,6 +166,10 @@ const AddListing = () => {
       const { error } = await supabase.from("items").insert([finalData]);
 
       if (error) throw error;
+
+      attachments.forEach((att) => {
+        if (att.preview) URL.revokeObjectURL(att.preview);
+      });
 
       toast.current.show({
         severity: "success",
@@ -121,11 +183,11 @@ const AddListing = () => {
         category: "Tools",
         description: "",
         transactionType: "Rent",
-        price: "",
+        price: null,
         location: "",
         condition: "Like New",
       });
-      setSelectedFiles([]);
+      setAttachments([]);
     } catch (error) {
       console.error(error);
       toast.current.show({
@@ -146,236 +208,364 @@ const AddListing = () => {
   };
 
   return (
-    <>
+    <div onKeyDown={handleKeyDown}>
       <Root />
-      <div
-        onKeyDown={handleKeyDown}
-        className="min-h-screen bg-inherit text-slate-200 font-sans p-6 md:p-12"
-      >
-        <Toast ref={toast} />
-
-        <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
-          <div>
-            <p className="text-sky-400 font-bold tracking-widest uppercase text-xs mb-1">
-              Digital Commons
-            </p>
-            <p className="text-3xl md:text-4xl font-bold tracking-tight text-white">
-              Drop New Gear
-            </p>
+      <Toast ref={toast} />
+      <main className="pt-32 pb-24 max-w-5xl mx-auto px-6">
+        {/* Progress Bar Section */}
+        <header className="mb-16">
+          <p className="text-4xl font-extrabold tracking-tight mb-8">
+            Post a Listing
+          </p>
+          <div className="flex items-center w-full gap-4">
+            <div className="flex flex-col flex-1 gap-2">
+              <div className="h-1.5 w-full bg-primary rounded-full" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-widest font-label">
+                Basics
+              </span>
+            </div>
+            <div className="flex flex-col flex-1 gap-2">
+              <div className="h-1.5 w-full bg-surface-container-highest rounded-full" />
+              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest font-label">
+                Media
+              </span>
+            </div>
+            <div className="flex flex-col flex-1 gap-2">
+              <div className="h-1.5 w-full bg-surface-container-highest rounded-full" />
+              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest font-label">
+                Details
+              </span>
+            </div>
+            <div className="flex flex-col flex-1 gap-2">
+              <div className="h-1.5 w-full bg-surface-container-highest rounded-full" />
+              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest font-label">
+                Review
+              </span>
+            </div>
           </div>
-          <button className="text-slate-400 hover:text-white transition flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-800/50">
-            <i className="pi pi-times-circle text-lg"></i>
-            <span className="hidden md:inline font-semibold">Cancel</span>
-          </button>
         </header>
 
-        <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className={`${cardBase} md:col-span-5 flex flex-col justify-center items-center text-center cursor-pointer border-2 border-dashed ${
-              selectedFiles.length > 0
-                ? "border-sky-500 bg-sky-500/5"
-                : "border-slate-700"
-            } hover:border-sky-500/50 min-h-70`}
-          >
-            <input
-              type="file"
-              hidden
-              ref={fileInputRef}
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-
-            <div className="w-20 h-20 bg-slate-950 rounded-full flex items-center justify-center mb-5">
-              <i
-                className={`pi ${
-                  selectedFiles.length > 0
-                    ? "pi-check text-green-400"
-                    : "pi-camera text-sky-400"
-                } text-3xl`}
-              ></i>
-            </div>
-
-            <p className="text-xl font-semibold text-white mb-1">
-              {selectedFiles.length > 0
-                ? `${selectedFiles.length} Photos Added`
-                : "Add Photos"}
-            </p>
-            <p className="text-slate-400 text-sm max-w-xs">
-              {selectedFiles.length > 0
-                ? "Click to change selection"
-                : "Drag & drop or click to upload up to 10 images"}
-            </p>
-          </div>
-
-          <div className={`${cardBase} md:col-span-7 flex flex-col gap-5`}>
-            <p className="text-lg font-semibold text-white">
-              <i className="pi pi-box text-orange-400 mr-2"></i> Core Details
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="text-sm text-slate-400 mb-1 block">
-                  Item Title
-                </label>
-                <InputText
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className={inputBase}
-                  placeholder="Sony A7III Camera"
-                />
+        <div className="flex items-center gap-2 lg:grid-cols-12 gap-12">
+          {/* Left Column: Form Content */}
+          <div className="lg:col-span-8 space-y-12 w-7/10">
+            {/* Section 1: Item Basics */}
+            <section className="bg-surface-container-low p-8 rounded-xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+                  <i className="pi pi-info-circle text-primary text-xl"></i>
+                </div>
+                <p className="text-2xl font-bold tracking-tight">Item Basics</p>
               </div>
-              <div>
-                <label className="text-sm text-slate-400 mb-1 block">
-                  Category
-                </label>
-                <Dropdown
-                  value={formData.category}
-                  options={[
-                    "Tools",
-                    "Electronics",
-                    "Outdoor Gear",
-                    "Vehicle",
-                    "Home Goods",
-                  ]}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category: e.value })
-                  }
-                  className="w-full bg-slate-950 border-slate-800"
-                />
+              <div className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Title
+                  </label>
+                  <InputText
+                    className="w-full bg-surface-container-highest border-none focus:border-b-2 focus:border-primary focus:ring-0 rounded-lg p-4 text-on-surface placeholder:text-slate-500"
+                    placeholder="e.g. Professional Concrete Drill"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Category
+                  </label>
+                  <Dropdown
+                    value={formData.category}
+                    options={categoryOptions}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.value })
+                    }
+                    pt={{
+                      root: {
+                        className:
+                          "w-full bg-surface-container-highest border-none rounded-lg focus:border-b-2 focus:border-primary focus:ring-0 flex items-center",
+                      },
+                      input: { className: "p-4 text-on-surface" },
+                      trigger: {
+                        className:
+                          "w-12 text-on-surface-variant flex items-center justify-center",
+                      },
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Description
+                  </label>
+                  <InputTextarea
+                    className="w-full bg-surface-container-highest border-none focus:border-b-2 focus:border-primary focus:ring-0 rounded-lg p-4 text-on-surface placeholder:text-slate-500"
+                    placeholder="Describe your item, its features, and any specific quirks..."
+                    rows={4}
+                    autoResize
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 mb-1 block">
-                Description
-              </label>
-              <InputTextarea
-                rows={3}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+            </section>
+
+            {/* Section 2: Media */}
+            <section className="bg-surface-container-low p-8 rounded-xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+                  <i className="pi pi-camera text-primary text-xl"></i>
+                </div>
+                <p className="text-2xl font-bold tracking-tight">Media</p>
+              </div>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                }}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                  isDragging
+                    ? "border-primary bg-primary/10"
+                    : "border-outline-variant/30 hover:border-primary/50"
+                }`}
+              >
+                <input
+                  type="file"
+                  hidden
+                  ref={fileInputRef}
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+
+                {attachments.length > 0 ? (
+                  <div className="w-full space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 w-full">
+                      {attachments.map((att, index) => (
+                        <div
+                          key={att.id}
+                          className="relative aspect-square group/item"
+                        >
+                          <img
+                            src={att.preview}
+                            alt={`preview ${index + 1}`}
+                            className="w-full h-full object-cover rounded-lg shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeAttachment(index);
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-lg transition-all"
+                          >
+                            <i className="pi pi-times text-xs"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-on-surface-variant text-sm font-label mt-4">
+                      Click or drag here to add more ({attachments.length}/10)
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center mb-4 group-hover:bg-primary-container transition-colors">
+                      <i className="pi pi-cloud-upload text-3xl text-on-surface-variant group-hover:text-primary transition-colors"></i>
+                    </div>
+                    <p className="text-lg font-semibold font-headline mb-1">
+                      Drag and drop photos here
+                    </p>
+                    <p className="text-on-surface-variant text-sm font-label">
+                      Or click to browse from your computer (Up to 10 photos)
+                    </p>
+                  </>
+                )}
+              </div>
+            </section>
+
+            {/* Section 3: Availability & Pricing */}
+            <section className="bg-surface-container-low p-8 rounded-xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+                  <i className="pi pi-tag text-primary text-xl"></i>
+                </div>
+                <p className="text-2xl font-bold tracking-tight">
+                  Availability & Pricing
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Transaction Type
+                  </label>
+                  <div className="flex gap-2">
+                    {["Rent", "Sell", "Share"].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, transactionType: type })
+                        }
+                        className={`flex-1 font-bold py-3 rounded-lg transition-colors ${
+                          formData.transactionType === type
+                            ? "bg-primary text-on-primary"
+                            : "bg-surface-container-highest text-on-surface hover:bg-surface-bright"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Price per Day ($)
+                  </label>
+                  <InputNumber
+                    inputId="currency-us"
+                    value={formData.price}
+                    onValueChange={(e) =>
+                      setFormData({ ...formData, price: e.value })
+                    }
+                    mode="currency"
+                    currency="USD"
+                    locale="en-US"
+                    placeholder="$0.00"
+                    className="w-full"
+                    inputClassName="w-full bg-surface-container-highest border-none focus:border-b-2 focus:border-primary focus:ring-0 rounded-lg p-4 text-on-surface placeholder:text-slate-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className="text-sm font-medium text-on-surface-variant font-label">
+                    Location
+                  </label>
+                  <div className="p-input-icon-left w-full relative">
+                    <i className="pi pi-map-marker text-on-surface-variant text-lg absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                    <InputText
+                      className="w-full bg-surface-container-highest border-none focus:border-b-2 focus:border-primary focus:ring-0 rounded-lg p-4 pl-12 text-on-surface placeholder:text-slate-500"
+                      placeholder="Search for your neighborhood or city..."
+                      value={formData.location}
+                      onChange={(e) =>
+                        setFormData({ ...formData, location: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 4: Condition */}
+            <section className="bg-surface-container-low p-8 rounded-xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+                  <i className="pi pi-box text-primary text-xl"></i>
+                </div>
+                <p className="text-2xl font-bold tracking-tight">Condition</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {["New", "Like New", "Good", "Fair"].map((cond) => (
+                  <label key={cond} className="cursor-pointer">
+                    <input
+                      className="hidden peer"
+                      name="condition"
+                      type="radio"
+                      checked={formData.condition === cond}
+                      onChange={() =>
+                        setFormData({ ...formData, condition: cond })
+                      }
+                    />
+                    <div className="p-4 border border-outline-variant/30 rounded-xl text-center peer-checked:bg-primary-container peer-checked:border-primary transition-all">
+                      <span className="text-sm font-bold font-headline block">
+                        {cond}
+                      </span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-between pt-8 border-t border-outline-variant/20 w-3/10">
+              <Button
+                label="Save Draft"
+                icon="pi pi-save"
+                className="px-8 py-3 text-primary font-semibold hover:bg-white/5 rounded-full transition-all flex items-center gap-2 bg-transparent border-none"
+                text
+              />
+              <Button
+                label={loading ? "Processing..." : "Next Step"}
+                icon={loading ? "pi pi-spin pi-spinner" : "pi pi-arrow-right"}
+                iconPos="right"
+                onClick={handleSubmit}
+                disabled={
+                  loading ||
+                  !formData.title?.trim() ||
+                  !formData.price ||
+                  !formData.location?.trim()
                 }
-                className={inputBase + " resize-none"}
-                placeholder="What makes this item great?"
+                className="bg-gradient-to-br from-primary to-on-primary-container px-10 py-4 text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed border-none hover:shadow-primary/40 transition-all"
               />
             </div>
           </div>
 
-          <div className={`${cardBase} md:col-span-8`}>
-            <p className="text-lg font-semibold text-white mb-5">
-              <i className="pi pi-wallet text-sky-400 mr-2"></i> Logistics
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="md:col-span-2">
-                <label className="text-sm text-slate-400 mb-1 block">
-                  Location
-                </label>
-                <div className="relative">
-                  <i className="pi pi-map-marker absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                  <InputText
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
-                    }
-                    className={inputBase + " pl-10"}
-                    placeholder="City or Zip"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-slate-400 mb-1 block">
-                  Price
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
-                    className={inputBase + " pl-8"}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="md:col-span-3">
-                <label className="text-sm text-slate-400 mb-2 block">
-                  Transaction Type
-                </label>
-                <div className="flex bg-slate-950 p-1 rounded-2xl gap-1">
-                  {["Rent", "Sell", "Share"].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, transactionType: type })
-                      }
-                      className={`flex-1 py-2 rounded-xl font-semibold text-sm transition-all ${
-                        formData.transactionType === type
-                          ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/30"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-4 flex flex-col gap-5">
-            <div className={`${cardBase}`}>
-              <p className="text-lg font-semibold text-white mb-5">
-                <i className="pi pi-check-square text-orange-400 mr-2"></i>{" "}
-                Condition
+          {/* Right Column: Sidebar Guidance */}
+          <aside className="lg:col-span-4 space-y-6">
+            <div className="bg-surface-container-high rounded-xl p-6 sticky top-32">
+              <p className="text-xl font-bold mb-4 flex items-center gap-2 text-tertiary">
+                <i className="pi pi-lightbulb text-xl text-yellow-400"></i>
+                Pro-Tip
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                {["New", "Like New", "Good", "Fair"].map((cond) => (
-                  <button
-                    key={cond}
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, condition: cond })
-                    }
-                    className={`p-3 rounded-xl border text-sm font-semibold transition ${
-                      formData.condition === cond
-                        ? "border-orange-400 bg-orange-400/10 text-orange-400"
-                        : "border-slate-800 text-slate-400 hover:bg-slate-800/50"
-                    }`}
-                  >
-                    {cond}
-                  </button>
-                ))}
+              <p className="text-on-surface-variant text-sm leading-relaxed mb-6 font-label">
+                Clear, high-quality photos in natural light can increase your
+                rental requests by up to 40%. Make sure to photograph any
+                existing wear or unique identifying marks.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <i className="pi pi-check-circle text-sky-400 mt-0.5 text-lg"></i>
+                  <span className="text-sm font-medium">
+                    Use descriptive titles like "Heavy Duty Bosch Hammer Drill"
+                  </span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <i className="pi pi-check-circle text-sky-400 mt-0.5 text-lg"></i>
+                  <span className="text-sm font-medium">
+                    Be honest about the condition to build community trust
+                  </span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <i className="pi pi-check-circle text-sky-400 mt-0.5 text-lg"></i>
+                  <span className="text-sm font-medium">
+                    Fair pricing leads to repeat borrowers
+                  </span>
+                </div>
+              </div>
+              <div className="mt-8 pt-6 border-t border-outline-variant/30">
+                <img
+                  alt="Sustainability illustration"
+                  className="w-3/10 h-full object-cover rounded-lg mb-4"
+                  src={sustain}
+                />
+                <p className="text-xs text-on-surface-variant text-center italic">
+                  By sharing, you've saved 4.2kg of CO2 today.
+                </p>
               </div>
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={
-                loading ||
-                !formData.title ||
-                !formData.price ||
-                !formData.location
-              }
-              className="w-full bg-linear-to-r from-white to-sky-200 text-slate-950 rounded-4xl p-5 font-bold text-lg shadow-xl hover:shadow-sky-400/40 transition-all disabled:opacity-50 flex justify-between items-center"
-            >
-              {loading ? "Uploading..." : "Launch Listing"}
-              <i
-                className={`pi ${
-                  loading ? "pi-spin pi-spinner" : "pi-rocket"
-                } text-xl`}
-              ></i>
-            </button>
-          </div>
-        </main>
-      </div>
-    </>
+          </aside>
+        </div>
+      </main>
+    </div>
   );
 };
 
