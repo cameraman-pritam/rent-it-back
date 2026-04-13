@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useState } from "react";
 import { Skeleton } from "primereact/skeleton";
 import { supabase } from "../../utils/supabase";
 import Swal from "sweetalert2";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../utils/AuthContext";
 
 const InputText = lazy(() =>
   import("primereact/inputtext").then((module) => ({

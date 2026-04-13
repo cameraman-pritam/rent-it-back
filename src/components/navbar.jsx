@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "../utils/AuthContext";
 import { Skeleton } from "primereact/skeleton";
 
 const Menubar = lazy(() =>
