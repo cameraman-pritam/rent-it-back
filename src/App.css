@@ -12,3 +12,8 @@
 @layer tailwind-utilities {
   @tailwind utilities;
 }
+/* Prevent zoom on ios */
+input,
+textarea {
+  font-size: 16px; /* prevents zoom on iOS */
+}
