@@ -176,7 +176,7 @@ const AddListing = () => {
       const finalData = {
         ...formData,
         price: Number(formData.price),
-        images,
+        images: images,
         uid: user.id,
         userEmail: user.email,
         userName: user.user_metadata?.name || "Anonymous",
