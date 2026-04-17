@@ -1,103 +1,84 @@
-# React + Vite
+# RentBack
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Digital Commons  
+A community platform for local renting, selling and sharing of goods.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+RentBack is a web application that enables individuals and communities to list, discover and transact physical items locally. The platform promotes a circular economy by facilitating reuse, rental and resale instead of new consumption.
 
-## React Compiler
+Built as a minimal, production-ready full-stack application with strict separation of concerns and modern tooling.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Technology Stack
 
-## Expanding the ESLint configuration
+- **Frontend**: ReactJS (Vite)
+- **Styling**: Tailwind CSS
+- **UI Components**: PrimeReact + PrimeIcons
+- **Animations**: Framer Motion
+- **Build Tool**: Bun
+- **Routing**: React Router DOM
+- **Backend & Database**: Supabase
+- **Hosting**: Firebase Hosting
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Architecture
+
+- Code-split routes using `React.lazy()` and `<Suspense>` with PrimeReact `Skeleton` loaders
+- Supabase Auth with profile synchronization via database trigger
+- Public `listings` storage bucket for item images
+- RLS policies enforcing ownership on user data and listings
+- Client-side filtering on the browse interface
+
+## Features
+
+- User authentication and profile management
+- Create listings with multiple image uploads to Supabase Storage
+- Browse all listings in a responsive card grid
+- Search and multi-criteria filters (category, transaction type, condition, price range, location)
+- Image gallery modal for detailed viewing
+- Responsive layout optimized for mobile and desktop
+
+## Project Structure
+
+```
+src/
+├── components/
+├── contexts/
+├── pages/
+│   ├── Home.jsx
+│   ├── Auth.jsx
+│   ├── AddListing.jsx
+│   ├── Browse.jsx
+│   └── About.jsx
+├── App.jsx
+└── main.jsx
+```
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+
+Version 3, 29 June 2007
+Copyright © 2007 Free Software Foundation, Inc. <http://fsf.org/>
+
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+
+Direct copy-paste deployment of this exact codebase to run an identical competing service without meaningful contribution is strongly discouraged. The purpose of releasing the source code is to share knowledge, patterns, and technical solutions within the open-source community, not to facilitate effortless replication for commercial competition.
+
+Contributions that improve the codebase, fix issues, or add meaningful features are welcome through pull requests.
+
+Full license text is available in the [LICENSE](LICENSE) file.
+
+## Philosophy
+
+RentBack exists to support a more sustainable relationship with material goods.  
+Reducing unnecessary consumption and extending the life of existing items benefits both communities and the environment.
+
+The platform remains free to use indefinitely.
+
+Made with Bun, PrimeReact, and Tailwind CSS.  
+Backend powered by Supabase. Hosted on Firebase.
 
 ---
 
-## Setup and Running the Project
-
-This project now uses a custom PostgreSQL backend powered by a Supabase Edge Function for authentication.
-
-### 1. Database Setup
-
-You need a PostgreSQL database that your Supabase project can connect to. You can use a new Supabase database or connect to an existing one.
-
-In your database, run the following SQL query to create the necessary `users` table:
-
-```sql
-CREATE TABLE users (
-  id serial PRIMARY KEY,
-  first_name text,
-  last_name text,
-  email varchar(256) UNIQUE NOT NULL,
-  password_hash text NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-```
-
-### 2. Supabase Setup
-
-**A. Install the Supabase CLI**
-
-If you haven't already, install the Supabase CLI:
-```bash
-npm install -g supabase
-```
-
-**B. Log in to Supabase**
-
-```bash
-supabase login
-```
-
-**C. Link Your Project**
-
-Navigate to the root of this project directory in your terminal and link it to your Supabase project. Replace `<YOUR_PROJECT_REF>` with your actual project reference from the Supabase dashboard.
-
-```bash
-supabase link --project-ref <YOUR_PROJECT_REF>
-```
-
-**D. Deploy the Edge Function**
-
-Deploy the `auth-api` function:
-
-```bash
-supabase functions deploy auth-api
-```
-This command bundles your function and deploys it to the Supabase infrastructure.
-
-### 3. Frontend Configuration
-
-**A. Set Your Project Reference**
-
-Open the `src/utils/db.js` file and replace the placeholder `<YOUR_PROJECT_REF>` with your actual Supabase project reference.
-
-```javascript
-// src/utils/db.js
-
-// Before:
-const SUPABASE_PROJECT_REF = '<YOUR_PROJECT_REF>';
-
-// After (example):
-const SUPABASE_PROJECT_REF = 'abcdefg12345';
-```
-
-**B. Install Dependencies**
-
-```bash
-npm install
-```
-
-### 4. Running the Application
-
-Once the database and backend function are set up, you can run the frontend development server:
-
-```bash
-npm run dev
-```
-
-Your application should now be running, and the login/signup forms will communicate with your new Supabase Edge Function.
+**cameraman-pritam**  
+Kolkata, West Bengal
