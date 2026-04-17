@@ -7,6 +7,7 @@ const Home = lazy(() => import("./components/pages/home"));
 const About = lazy(() => import("./components/pages/about"));
 const Auth = lazy(() => import("./components/pages/auth"));
 const AddListing = lazy(() => import("./components/pages/addlisting"));
+const Browse = lazy(() => import("./components/pages/browse"));
 
 const FallbackSkeleton = () => (
   <div className="min-h-screen bg-inherit p-6 md:p-12 w-full max-w-7xl mx-auto flex flex-col gap-6">
@@ -28,6 +29,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/add" element={<AddListing />} />
+        <Route path="/browse" element={<Browse />} />
       </Routes>
     </Suspense>
   );
