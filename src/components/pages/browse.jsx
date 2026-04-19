@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { supabase } from "../../utils/supabase";
 import { Skeleton } from "primereact/skeleton";
 import { Card } from "primereact/card";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
-/* ---------------- LAZY LOADED PRIME COMPONENTS ---------------- */
 const Toast = lazy(() =>
   import("primereact/toast").then((m) => ({ default: m.Toast }))
 );
@@ -26,16 +26,15 @@ const Dialog = lazy(() =>
 const Galleria = lazy(() =>
   import("primereact/galleria").then((m) => ({ default: m.Galleria }))
 );
+
 const Root = lazy(() => import("../structure/root"));
 
 const Browse = () => {
   const toast = useRef(null);
-
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------- FILTER STATES ---------------- */
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState([]);
@@ -43,10 +42,8 @@ const Browse = () => {
   const [minPrice, setMinPrice] = useState(null);
   const [maxPrice, setMaxPrice] = useState(null);
 
-  /* ---------------- MODAL STATE (for image gallery) ---------------- */
   const [selectedItem, setSelectedItem] = useState(null);
 
-  /* ---------------- STATIC OPTIONS ---------------- */
   const categoryOptions = [
     { label: "Tools", value: "Tools" },
     { label: "Electronics", value: "Electronics" },
@@ -68,7 +65,13 @@ const Browse = () => {
     { label: "Fair", value: "Fair" },
   ];
 
-  /* ---------------- FETCH ALL ITEMS ---------------- */
+  const getImageUrl = (input) => {
+    if (!input) return null;
+    if (typeof input === "string" && input.startsWith("http")) return input;
+    const { data } = supabase.storage.from("listings").getPublicUrl(input);
+    return data.publicUrl;
+  };
+
   const fetchItems = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -76,14 +79,7 @@ const Browse = () => {
       .select("*")
       .order("createdAt", { ascending: false });
 
-    if (error) {
-      console.error("Fetch error:", error);
-      toast.current?.show({
-        severity: "error",
-        summary: "Failed to load listings",
-        detail: error.message,
-      });
-    } else {
+    if (!error) {
       setItems(data || []);
       setFilteredItems(data || []);
     }
@@ -94,11 +90,9 @@ const Browse = () => {
     fetchItems();
   }, []);
 
-  /* ---------------- CLIENT-SIDE FILTERING ---------------- */
   useEffect(() => {
     let result = [...items];
 
-    // Global search
     if (globalFilter.trim()) {
       const term = globalFilter.toLowerCase().trim();
       result = result.filter(
@@ -109,28 +103,21 @@ const Browse = () => {
       );
     }
 
-    // Category filter
     if (selectedCategories.length > 0) {
       result = result.filter((item) =>
         selectedCategories.includes(item.category)
       );
     }
-
-    // Transaction type filter
     if (selectedTransactionTypes.length > 0) {
       result = result.filter((item) =>
         selectedTransactionTypes.includes(item.transactionType)
       );
     }
-
-    // Condition filter
     if (selectedConditions.length > 0) {
       result = result.filter((item) =>
         selectedConditions.includes(item.condition)
       );
     }
-
-    // Price range
     if (minPrice !== null) {
       result = result.filter((item) => Number(item.price) >= minPrice);
     }
@@ -149,7 +136,6 @@ const Browse = () => {
     maxPrice,
   ]);
 
-  /* ---------------- CLEAR FILTERS ---------------- */
   const clearFilters = () => {
     setGlobalFilter("");
     setSelectedCategories([]);
@@ -159,11 +145,10 @@ const Browse = () => {
     setMaxPrice(null);
   };
 
-  /* ---------------- GALLERIA ITEMS ---------------- */
   const galleriaItems =
-    selectedItem?.image?.map((url, idx) => ({
-      itemImageSrc: url,
-      thumbnailImageSrc: url,
+    selectedItem?.images?.map((img, idx) => ({
+      itemImageSrc: getImageUrl(img),
+      thumbnailImageSrc: getImageUrl(img),
       alt: `Image ${idx + 1}`,
     })) || [];
 
@@ -173,7 +158,6 @@ const Browse = () => {
       <Toast ref={toast} />
 
       <div className="pt-32 pb-12 px-4 md:px-8 max-w-screen-2xl mx-auto">
-        {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1 }}
@@ -187,10 +171,8 @@ const Browse = () => {
           </p>
         </motion.div>
 
-        {/* FILTER BAR */}
         <Card className="mb-8 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-6 p-6">
-            {/* Global Search */}
             <div className="flex-1">
               <span className="p-input-icon-left w-full">
                 <i className="pi pi-search" />
@@ -203,7 +185,6 @@ const Browse = () => {
               </span>
             </div>
 
-            {/* Category */}
             <div className="lg:w-64">
               <MultiSelect
                 value={selectedCategories}
@@ -215,7 +196,6 @@ const Browse = () => {
               />
             </div>
 
-            {/* Transaction Type */}
             <div className="lg:w-52">
               <MultiSelect
                 value={selectedTransactionTypes}
@@ -227,7 +207,6 @@ const Browse = () => {
               />
             </div>
 
-            {/* Condition */}
             <div className="lg:w-52">
               <MultiSelect
                 value={selectedConditions}
@@ -239,7 +218,6 @@ const Browse = () => {
               />
             </div>
 
-            {/* Price Range */}
             <div className="flex items-center gap-3 lg:w-80">
               <InputNumber
                 value={minPrice}
@@ -262,7 +240,6 @@ const Browse = () => {
               />
             </div>
 
-            {/* Clear Filters */}
             <Button
               label="Clear"
               icon="pi pi-times"
@@ -273,7 +250,6 @@ const Browse = () => {
           </div>
         </Card>
 
-        {/* LISTINGS GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => (
@@ -290,36 +266,34 @@ const Browse = () => {
                 </Card>
               ))
             : filteredItems.map((item) => {
-                const images = item.image || [];
+                const images = item.images || item.image || [];
                 const firstImage = images[0];
+                const firstImageUrl = getImageUrl(firstImage);
 
                 return (
                   <motion.div
-                    key={item.id || item.createdAt}
+                    key={item.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     whileHover={{ y: -6 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
                     <Card className="overflow-hidden h-full flex flex-col shadow-sm hover:shadow-xl transition-all duration-300">
-                      {/* IMAGE SECTION */}
                       <div
                         className="relative cursor-pointer"
                         onClick={() => setSelectedItem(item)}
                       >
-                        {firstImage ? (
+                        {firstImageUrl ? (
                           <>
                             <img
-                              src={firstImage}
+                              src={firstImageUrl}
                               alt={item.title}
                               className="w-full h-56 object-cover"
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://via.placeholder.com/400x300?text=Image+Failed";
+                              }}
                             />
-                            {images.length > 1 && (
-                              <div className="absolute top-4 right-4 bg-black/70 text-white text-xs font-semibold px-3 py-1 rounded-3xl flex items-center gap-1">
-                                <i className="pi pi-images text-sm" />+
-                                {images.length - 1}
-                              </div>
-                            )}
                           </>
                         ) : (
                           <div className="w-full h-56 bg-gray-100 flex items-center justify-center">
@@ -333,7 +307,6 @@ const Browse = () => {
                         )}
                       </div>
 
-                      {/* CONTENT */}
                       <div className="p-5 flex-1 flex flex-col">
                         <div className="flex justify-between items-start">
                           <h3 className="font-bold text-xl leading-tight line-clamp-2 flex-1 pr-3">
@@ -343,31 +316,20 @@ const Browse = () => {
                             ${Number(item.price).toLocaleString()}
                           </span>
                         </div>
-
                         <p className="text-sm text-gray-500 mt-1 line-clamp-1">
                           {item.location}
                         </p>
-
                         <div className="flex flex-wrap gap-2 mt-4">
                           <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-3xl">
                             {item.category}
                           </span>
-                          <span
-                            className={`text-xs font-medium px-3 py-1 rounded-3xl ${
-                              item.transactionType === "Rent"
-                                ? "bg-purple-100 text-purple-700"
-                                : item.transactionType === "Sell"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
+                          <span className="text-xs font-medium px-3 py-1 rounded-3xl">
                             {item.transactionType}
                           </span>
                           <span className="text-xs font-medium px-3 py-1 bg-gray-100 text-gray-700 rounded-3xl">
                             {item.condition}
                           </span>
                         </div>
-
                         <div className="mt-auto pt-6 text-xs flex justify-between text-gray-500 border-t">
                           <span>by {item.userName || "Anonymous"}</span>
                           <span>
@@ -387,18 +349,6 @@ const Browse = () => {
               })}
         </div>
 
-        {/* EMPTY STATE */}
-        {!loading && filteredItems.length === 0 && (
-          <div className="text-center py-20">
-            <i className="pi pi-inbox text-7xl text-gray-300" />
-            <p className="mt-6 text-xl font-medium text-gray-400">
-              No listings found
-            </p>
-            <p className="text-gray-500">Try adjusting your filters</p>
-          </div>
-        )}
-
-        {/* IMAGE GALLERY MODAL */}
         <Dialog
           header={
             selectedItem
@@ -416,12 +366,28 @@ const Browse = () => {
               value={galleriaItems}
               showThumbnails={galleriaItems.length > 1}
               showItemNavigators
-              showItemNavigatorsOnItem
-              changeItemOnIndicatorHover
               circular
               autoPlay={false}
               transitionInterval={3000}
               style={{ height: "620px" }}
+              item={(item) => (
+                <img
+                  src={item.itemImageSrc}
+                  alt={item.alt}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                  }}
+                />
+              )}
+              thumbnail={(item) => (
+                <img
+                  src={item.thumbnailImageSrc}
+                  alt={item.alt}
+                  style={{ width: "100%", objectFit: "cover" }}
+                />
+              )}
             />
           )}
         </Dialog>
