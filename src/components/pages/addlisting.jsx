@@ -3,9 +3,9 @@ import { supabase } from "../../utils/supabase";
 import sustain from "../../assets/3726696.jpg";
 import { Skeleton } from "primereact/skeleton";
 import { Card } from "primereact/card";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ---------------- LAZY ---------------- */
 const Toast = lazy(() =>
   import("primereact/toast").then((m) => ({ default: m.Toast }))
 );
@@ -29,7 +29,6 @@ const Divider = lazy(() =>
 );
 const Root = lazy(() => import("../structure/root"));
 
-/* ---------------- ANIMATED BUTTON ---------------- */
 const AnimatedButton = ({ children, loading, onClick, ...props }) => (
   <motion.button
     type="button"
@@ -74,7 +73,6 @@ const AddListing = () => {
     { label: "Home Goods", value: "Home Goods" },
   ];
 
-  /* ---------------- DRAFT ---------------- */
   useEffect(() => {
     const saved = localStorage.getItem("listing_draft");
     if (saved) setFormData(JSON.parse(saved));
@@ -82,10 +80,9 @@ const AddListing = () => {
 
   const saveDraft = () => {
     localStorage.setItem("listing_draft", JSON.stringify(formData));
-    toast.current.show({ severity: "info", summary: "Draft Saved" });
+    toast.current?.show({ severity: "info", summary: "Draft Saved" });
   };
 
-  /* ---------------- VALIDATION ---------------- */
   const isValid = () => {
     const checks = {
       title: formData.title.trim().length >= 3,
@@ -93,20 +90,16 @@ const AddListing = () => {
       location: formData.location.trim().length >= 2,
       category: !!formData.category,
     };
-
-    console.log("VALIDATION CHECK:", checks);
-
     return Object.values(checks).every(Boolean);
   };
 
-  /* ---------------- FILE HANDLING ---------------- */
   const handleFiles = (files) => {
     const imgs = Array.from(files).filter((f) => f.type.startsWith("image/"));
 
     if (!imgs.length) return;
 
     if (attachments.length + imgs.length > 10) {
-      toast.current.show({ severity: "warn", summary: "Max 10 images" });
+      toast.current?.show({ severity: "warn", summary: "Max 10 images" });
       return;
     }
 
@@ -124,33 +117,53 @@ const AddListing = () => {
     setAttachments((prev) => prev.filter((_, idx) => idx !== i));
   };
 
-  /* ---------------- UPLOAD ---------------- */
   const uploadImages = async (uid) => {
-    const urls = [];
+    const paths = [];
 
     for (const att of attachments) {
-      const path = `${uid}/${Date.now()}-${att.file.name}`;
+      const fileName = `${Date.now()}-${att.file.name}`;
+      const path = `${uid}/${fileName}`;
+
       const { error } = await supabase.storage
         .from("listings")
-        .upload(path, att.file);
+        .upload(path, att.file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      if (!error) {
-        const { data } = supabase.storage.from("listings").getPublicUrl(path);
-        urls.push(data.publicUrl);
+      if (error) {
+        console.error("Upload error:", error);
+        toast.current?.show({
+          severity: "error",
+          summary: "Upload failed",
+          detail: att.file.name,
+        });
+        continue;
       }
+
+      paths.push(path);
     }
-    return urls;
+
+    return paths;
   };
 
-  /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async () => {
-    console.log("FORM DATA:", formData);
+  const applyWatermark = async (imagePaths) => {
+    for (const path of imagePaths) {
+      try {
+        await supabase.functions.invoke("watermark-image", {
+          body: { path },
+        });
+      } catch (err) {
+        console.error("Watermark failed for", path, err);
+      }
+    }
+  };
 
-    if (!isValid) {
-      console.warn("Validation failed");
-      toast.current.show({
+  const handleSubmit = async () => {
+    if (!isValid()) {
+      toast.current?.show({
         severity: "warn",
-        summary: "Invalid input",
+        summary: "Please fill all required fields",
       });
       return;
     }
@@ -158,12 +171,11 @@ const AddListing = () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    console.log("USER:", user);
 
     if (!user) {
-      toast.current.show({
+      toast.current?.show({
         severity: "error",
-        summary: "Login required",
+        summary: "You must be logged in",
       });
       return;
     }
@@ -171,45 +183,57 @@ const AddListing = () => {
     setLoading(true);
 
     try {
-      const images = attachments.length ? await uploadImages(user.id) : [];
+      const imagePaths = attachments.length ? await uploadImages(user.id) : [];
 
       const finalData = {
-        ...formData,
+        title: formData.title.trim(),
+        category: formData.category,
+        description: formData.description.trim(),
+        transactionType: formData.transactionType,
         price: Number(formData.price),
-        images: images,
+        location: formData.location.trim(),
+        condition: formData.condition,
+        images: imagePaths,
         uid: user.id,
+        userName:
+          user.user_metadata?.name || user.email?.split("@")[0] || "Anonymous",
         userEmail: user.email,
-        userName: user.user_metadata?.name || "Anonymous",
-        createdAt: new Date().toISOString(),
       };
 
-      console.log("SENDING:", finalData);
+      const { error } = await supabase.from("items").insert([finalData]);
 
-      const { data, error } = await supabase
-        .from("items")
-        .insert([finalData])
-        .select();
+      if (error) throw error;
 
-      if (error) {
-        console.error("INSERT ERROR:", error);
-        throw error;
+      // Apply watermark to all uploaded images
+      if (imagePaths.length > 0) {
+        await applyWatermark(imagePaths);
       }
 
-      console.log("SUCCESS:", data);
-
-      toast.current.show({
+      toast.current?.show({
         severity: "success",
-        summary: "Listing created!",
+        summary: "Listing posted successfully!",
       });
-    } catch (err) {
-      console.error("FINAL ERROR:", err);
-      toast.current.show({
-        severity: "error",
-        summary: "Failed",
-      });
-    }
 
-    setLoading(false);
+      setFormData({
+        title: "",
+        category: null,
+        description: "",
+        transactionType: "Rent",
+        price: null,
+        location: "",
+        condition: "Like New",
+      });
+      setAttachments([]);
+    } catch (err) {
+      console.error("Submit error:", err);
+      toast.current?.show({
+        severity: "error",
+        summary: "Failed to post listing",
+        detail: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -218,7 +242,6 @@ const AddListing = () => {
       <Toast ref={toast} />
 
       <Card className="pt-32 pb-24 px-6">
-        {/* HEADER */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1 }}
@@ -228,9 +251,7 @@ const AddListing = () => {
         </motion.header>
 
         <div className="flex flex-col lg:grid lg:grid-cols-10 gap-12">
-          {/* MAIN */}
           <div className="lg:col-span-8 space-y-8">
-            {/* TITLE */}
             <InputText
               value={formData.title}
               placeholder="Enter item title..."
@@ -240,7 +261,6 @@ const AddListing = () => {
               }
             />
 
-            {/* CATEGORY */}
             <Dropdown
               value={formData.category}
               options={categoryOptions}
@@ -249,7 +269,6 @@ const AddListing = () => {
               className="w-full"
             />
 
-            {/* DESCRIPTION */}
             <InputTextarea
               value={formData.description}
               placeholder="Describe your item..."
@@ -260,7 +279,6 @@ const AddListing = () => {
               }
             />
 
-            {/* TRANSACTION */}
             <div className="flex gap-2">
               {["Rent", "Sell", "Share"].map((type) => (
                 <motion.button
@@ -281,7 +299,6 @@ const AddListing = () => {
               ))}
             </div>
 
-            {/* PRICE */}
             <InputNumber
               value={formData.price}
               onValueChange={(e) =>
@@ -291,7 +308,6 @@ const AddListing = () => {
               placeholder="Enter price"
             />
 
-            {/* LOCATION */}
             <InputText
               value={formData.location}
               placeholder="Enter location..."
@@ -301,7 +317,6 @@ const AddListing = () => {
               }
             />
 
-            {/* CONDITION */}
             <div className="grid grid-cols-2 gap-3">
               {["New", "Like New", "Good", "Fair"].map((cond) => (
                 <motion.div
@@ -320,7 +335,6 @@ const AddListing = () => {
               ))}
             </div>
 
-            {/* IMAGES */}
             <motion.div
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${
                 isDragging ? "bg-primary/10 border-primary" : "border-gray-300"
@@ -347,10 +361,9 @@ const AddListing = () => {
                 onChange={(e) => handleFiles(e.target.files)}
               />
 
-              {/* EMPTY STATE */}
               {attachments.length === 0 && (
                 <div className="flex flex-col items-center gap-3">
-                  <i className="pi pi-cloud-upload text-4xl text-gray-400"></i>
+                  <i className="pi pi-cloud-upload text-4xl text-gray-400" />
                   <p className="font-semibold">Click or drag images here</p>
                   <p className="text-sm text-gray-500">
                     Upload up to 10 images
@@ -358,7 +371,6 @@ const AddListing = () => {
                 </div>
               )}
 
-              {/* IMAGE PREVIEW GRID */}
               {attachments.length > 0 && (
                 <div className="mt-4 space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -377,7 +389,6 @@ const AddListing = () => {
                             className="w-full h-28 object-cover rounded-lg"
                             alt="preview"
                           />
-
                           <motion.button
                             whileTap={{ scale: 0.8 }}
                             onClick={(e) => {
@@ -392,14 +403,13 @@ const AddListing = () => {
                       ))}
                     </AnimatePresence>
                   </div>
-
                   <p className="text-sm text-gray-500">
                     {attachments.length}/10 images added
                   </p>
                 </div>
               )}
             </motion.div>
-            {/* BUTTONS */}
+
             <div className="flex justify-between">
               <AnimatedButton
                 onClick={saveDraft}
@@ -411,7 +421,6 @@ const AddListing = () => {
               <AnimatedButton
                 onClick={handleSubmit}
                 loading={loading}
-                disabled={false}
                 className="px-8 py-3 bg-primary text-white rounded-full"
               >
                 {loading ? "Posting..." : "Post Listing"}
@@ -419,7 +428,6 @@ const AddListing = () => {
             </div>
           </div>
 
-          {/* SIDEBAR */}
           <aside className="lg:col-span-2">
             <div className="p-6 bg-surface-container-high rounded-xl sticky top-32">
               <p className="text-xl font-bold mb-4">Pro Tips</p>
@@ -430,7 +438,7 @@ const AddListing = () => {
               </ul>
               <img src={sustain} className="rounded-lg mb-4" />
               <p className="text-xs text-center italic">
-                You've saved CO₂ today 🌱
+                You've saved CO₂ today
               </p>
             </div>
           </aside>
