@@ -147,18 +147,6 @@ const AddListing = () => {
     return paths;
   };
 
-  const applyWatermark = async (imagePaths) => {
-    for (const path of imagePaths) {
-      try {
-        await supabase.functions.invoke("watermark-image", {
-          body: { path },
-        });
-      } catch (err) {
-        console.error("Watermark failed for", path, err);
-      }
-    }
-  };
-
   const handleSubmit = async () => {
     if (!isValid()) {
       toast.current?.show({
@@ -203,11 +191,6 @@ const AddListing = () => {
       const { error } = await supabase.from("items").insert([finalData]);
 
       if (error) throw error;
-
-      // Apply watermark to all uploaded images
-      if (imagePaths.length > 0) {
-        await applyWatermark(imagePaths);
-      }
 
       toast.current?.show({
         severity: "success",
