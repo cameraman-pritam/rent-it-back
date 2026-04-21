@@ -34,7 +34,7 @@ const NotFound = () => {
         {/* Action Button */}
         <Button
           component={Link}
-          to="/home"
+          to="/"
           variant="contained"
           startIcon={<HomeIcon />}
           className="bg-teal-600 hover:bg-teal-700 px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105"
