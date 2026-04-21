@@ -7,10 +7,12 @@ import {
   ArrowForward,
   Explore,
 } from "@mui/icons-material";
+import hero from "../assets/hero.png";
+import exchange from "../assets/exchange.png";
 
 const Home = () => {
   return (
-    <main className="flex-grow bg-[#0d1320] text-[#dde2f5] font-['Manrope'] antialiased">
+    <main className="grow bg-[#0d1320] text-[#dde2f5] font-['Manrope'] antialiased">
       {/* 1. HERO SECTION */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-24">
         {/* Abstract background glow */}
@@ -25,7 +27,7 @@ const Home = () => {
               <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.05] tracking-tight font-extrabold mb-8 text-balance">
                 Own less.
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#dde2f5] via-[#6dd9c3] to-[#46b5a1]">
+                <span className="text-transparent bg-clip-text bg-linear-to-br from-[#dde2f5] via-[#6dd9c3] to-[#46b5a1]">
                   Live more.
                 </span>
               </h1>
@@ -34,7 +36,7 @@ const Home = () => {
                 of ownership. Join a community built on access over excess.
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-start items-center">
-                <button className="bg-gradient-to-br from-[#6dd9c3] to-[#46b5a1] text-[#00382f] font-bold py-4 px-10 rounded-lg text-lg hover:shadow-[0_0_40px_rgba(109,217,195,0.2)] transition-all duration-300">
+                <button className="bg-linear-to-br from-[#6dd9c3] to-[#46b5a1] text-[#00382f] font-bold py-4 px-10 rounded-lg text-lg hover:shadow-[0_0_40px_rgba(109,217,195,0.2)] transition-all duration-300">
                   Explore Collection
                 </button>
                 <button className="border border-slate-700/50 text-[#dde2f5] font-semibold py-4 px-10 rounded-lg text-lg hover:bg-[#151b29] transition-colors duration-300 backdrop-blur-sm">
@@ -44,13 +46,13 @@ const Home = () => {
             </div>
 
             {/* HERO IMAGE PLACEHOLDER */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-800 aspect-[4/5] lg:aspect-square bg-[#1a202d]">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-800 aspect-4/5 lg:aspect-square bg-[#1a202d]">
               <img
                 alt="Hero Visual"
                 className="w-full h-full object-cover"
-                src="" // Add your image URL here
+                src={hero} // Add your image URL here
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d1320] via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-[#0d1320] via-transparent to-transparent"></div>
             </div>
           </div>
         </div>
@@ -119,15 +121,15 @@ const Home = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-[600px]">
+          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-150">
             {/* Main Card */}
             <div className="md:col-span-2 md:row-span-2 rounded-xl overflow-hidden relative group bg-[#1a202d]">
               <img
-                src=""
+                src="https://www.adorama.com/alc/wp-content/uploads/2021/04/photography-camera-types-feature-825x465.jpg"
                 alt="Creative Tech"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d1320] via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-[#0d1320] via-transparent to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-8 w-full">
                 <span className="bg-[#6dd9c3]/20 text-[#6dd9c3] text-xs uppercase tracking-wider font-bold py-1 px-3 rounded-full mb-4 inline-block">
                   Creative Tech
@@ -141,11 +143,11 @@ const Home = () => {
             {/* Secondary Card */}
             <div className="md:col-span-2 md:row-span-1 rounded-xl overflow-hidden relative group bg-[#1a202d]">
               <img
-                src=""
+                src="https://c7.alamy.com/comp/D6K308/talkeetna-mt-mckinley-denali-national-park-alaska-united-states-of-D6K308.jpg"
                 alt="Expedition"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d1320] via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-[#0d1320] via-transparent to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-6 w-full">
                 <h3 className="text-2xl font-bold text-white mb-1">
                   Expedition Gear
@@ -156,11 +158,11 @@ const Home = () => {
             {/* Small Card */}
             <div className="md:col-span-1 md:row-span-1 rounded-xl overflow-hidden relative group bg-[#1a202d]">
               <img
-                src=""
+                src="https://jcblhandtools.com/wp-content/uploads/2024/12/Workshop-Hand-Tools.webp"
                 alt="Tools"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d1320] via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-[#0d1320] via-transparent to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-6 w-full">
                 <h3 className="text-xl font-bold text-white">Pro Tools</h3>
               </div>
@@ -211,7 +213,7 @@ const Home = () => {
             </div>
             <div className="relative rounded-2xl overflow-hidden bg-[#1a202d] aspect-square border border-slate-800">
               <img
-                src=""
+                src={exchange}
                 alt="Impact Visual"
                 className="w-full h-full object-cover opacity-60 mix-blend-luminosity"
               />
