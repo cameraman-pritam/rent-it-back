@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/* Tailwind v4 Theme Setup 
+  This acts as your old tailwind.config.js extend block 
+*/
+@theme {
+  --color-primary: #6dd9c3;
+  --color-secondary: #a5c8ff;
+  --color-surface: #0d1320;
+  --color-on-surface: #dde2f5;
+  --color-on-surface-variant: #bcc9c5;
+  --color-surface-container: #1a202d;
+  --color-surface-container-high: #242a38;
+  --color-surface-container-highest: #2f3543;
+  --color-outline: #87938f;
+  --color-on-primary: #00382f;
+
+  --font-body: "Manrope", sans-serif;
+}
+
+@layer utilities {
+  .signature-gradient {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #46b5a1 100%);
+  }
+  .glass-panel {
+    background: rgba(26, 32, 45, 0.7);
+    backdrop-filter: blur(20px);
+  }
+  .ghost-border {
+    border: 1px solid rgba(135, 147, 143, 0.15);
+  }
+}

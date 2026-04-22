@@ -1,11 +1,14 @@
 // src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./utils/router"; // Import the App function you just showed me
-import "./index.css"; // Make sure Tailwind is imported here!
+import App from "./utils/router";
+import "./index.css";
+import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 );
