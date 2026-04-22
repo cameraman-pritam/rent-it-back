@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "portless dev vite",
+    "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "portless prev vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -17,7 +17,6 @@
     "@mui/material": "^9.0.0",
     "@supabase/supabase-js": "^2.104.0",
     "@tailwindcss/vite": "^4.2.3",
-    "portless": "^0.10.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.1",
