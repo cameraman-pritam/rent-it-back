@@ -6,6 +6,7 @@ import Browse from "../pages/browse";
 import Contribute from "../pages/contribute";
 import NotFound from "../pages/notfound";
 import SignUp from "../pages/auth/signup";
+import SignIn from "../pages/auth/signin";
 
 const router = createBrowserRouter([
   {
@@ -17,7 +18,13 @@ const router = createBrowserRouter([
       { path: "about", element: <About /> },
       { path: "contribute", element: <Contribute /> },
       { path: "*", element: <NotFound /> },
-      { path: "auth", children: [{ path: "signup", element: <SignUp /> }] },
+      {
+        path: "auth",
+        children: [
+          { path: "signup", element: <SignUp /> },
+          { path: "signin", element: <SignIn /> },
+        ],
+      },
     ],
   },
 ]);

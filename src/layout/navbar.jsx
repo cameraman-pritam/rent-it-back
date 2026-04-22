@@ -60,7 +60,7 @@ const Navbar = () => {
         <div className="flex gap-3">
           <Button
             component={Link}
-            to="/signin"
+            to="/auth/signin"
             variant="outlined"
             color="inherit"
             className="border-slate-500 text-slate-300 hover:border-teal-400 hover:text-teal-400"
@@ -69,7 +69,7 @@ const Navbar = () => {
           </Button>
           <Button
             component={Link}
-            to="/signup"
+            to="/auth/signup"
             variant="contained"
             className="bg-teal-600 hover:bg-teal-700 text-white"
           >

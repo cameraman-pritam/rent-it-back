@@ -3,10 +3,26 @@ import { InputBase, Button, Divider } from "@mui/material";
 import EnergySavingsLeafIcon from "@mui/icons-material/EnergySavingsLeaf";
 import GoogleIcon from "@mui/icons-material/Google";
 import VerifiedIcon from "@mui/icons-material/Verified";
-// eslint-disable-next-line no-unused-vars
 import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
 
 const SignUp = () => {
+  const { signUp } = useAuth();
+
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+
+    try {
+      await signUp(name, email, password);
+      Swal.fire("Success!", "Check your email for confirmation!", "success");
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
   return (
     <div className="bg-surface font-body text-on-surface selection:bg-primary/30 min-h-screen flex flex-col">
       <main className="grow flex items-center justify-center relative overflow-hidden px-6 py-20">
@@ -61,7 +77,7 @@ const SignUp = () => {
                 </p>
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handleSignup}>
                 <div className="space-y-1.5 flex flex-col">
                   <label className="text-xs font-semibold text-primary tracking-wider uppercase ml-1">
                     Full Name
@@ -70,6 +86,8 @@ const SignUp = () => {
                     className="w-full bg-surface-container-high text-on-surface px-4 py-2 rounded-xl focus-within:ring-1 focus-within:ring-primary focus-within:bg-surface-container-highest transition-all placeholder:text-outline/50"
                     placeholder="Alex Rivera"
                     type="text"
+                    onChange={(e) => setName(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="space-y-1.5 flex flex-col">
@@ -80,6 +98,8 @@ const SignUp = () => {
                     className="w-full bg-surface-container-high text-on-surface px-4 py-2 rounded-xl focus-within:ring-1 focus-within:ring-primary focus-within:bg-surface-container-highest transition-all placeholder:text-outline/50"
                     placeholder="alex@example.com"
                     type="email"
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="space-y-1.5 flex flex-col">
@@ -90,6 +110,8 @@ const SignUp = () => {
                     className="w-full bg-surface-container-high text-on-surface px-4 py-2 rounded-xl focus-within:ring-1 focus-within:ring-primary focus-within:bg-surface-container-highest transition-all placeholder:text-outline/50"
                     placeholder="••••••••"
                     type="password"
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
                 <p className="text-[10px] text-center text-on-surface-variant/70 uppercase tracking-widest mb-1 mt-4">
@@ -132,7 +154,7 @@ const SignUp = () => {
                   Already have an account?
                   <a
                     className="text-primary font-bold hover:underline ml-1"
-                    href="#"
+                    href="/auth/signin"
                   >
                     Log in
                   </a>
