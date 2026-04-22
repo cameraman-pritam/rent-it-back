@@ -37,8 +37,22 @@ export const AuthProvider = ({ children }) => {
     loading,
 
     signOut: () => supabase.auth.signOut(),
-  };
 
+    signUp: async (name, email, password) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name, // stored in user_metadata
+          },
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+  };
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
