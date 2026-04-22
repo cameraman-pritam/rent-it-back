@@ -1,13 +1,13 @@
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { AppBar, Toolbar, Button, IconButton, Typography } from "@mui/material";
+import { AppBar, Toolbar, Button, Typography } from "@mui/material";
 import {
   Home as HomeIcon,
   Explore as ExploreIcon,
   Info as InfoIcon,
   VolunteerActivism as ContributeIcon,
-  Login as LoginIcon,
 } from "@mui/icons-material";
+import { logoNavbar } from "../assets/assets.js";
 
 const Navbar = () => {
   const navClass = "bg-[#0f172a] border-b border-teal-900/30";
@@ -30,7 +30,13 @@ const Navbar = () => {
         {/* Logo Section */}
         <Typography variant="h6" className="font-bold tracking-tight">
           <Link to="/" className="text-white flex items-center gap-2">
-            <span className="text-teal-500 text-2xl">RB</span> Rent Back
+            {/* Logo Image Placeholder */}
+            <img
+              src={logoNavbar}
+              alt="Rent Back Logo"
+              className="h-8 w-auto object-contain"
+            />
+            <span>Rent Back</span>
           </Link>
         </Typography>
 
