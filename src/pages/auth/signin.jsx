@@ -31,9 +31,71 @@ const SignIn = () => {
   };
 
   if (user) {
+    const name =
+      user.user_metadata?.full_name || user.user_metadata?.name || "No Name";
+
+    const email = user.email;
+    const isVerified = !!user.email_confirmed_at;
+
+    const handleLogout = async () => {
+      await supabase.auth.signOut();
+      window.location.reload(); // or redirect
+    };
+
+    const handleDeleteAccount = async () => {
+      const confirmDelete = window.confirm("Delete your account permanently?");
+      if (!confirmDelete) return;
+
+      // Look how clean this is!
+      // The Supabase client automatically attaches the current user's token,
+      // and your Edge function reads everything it needs directly from that token.
+      const { error } = await supabase.functions.invoke("delete-user");
+
+      if (error) {
+        console.error("Function error details:", error);
+        alert(`Failed to delete account: ${error.message}`);
+      } else {
+        alert("Account deleted successfully.");
+        await supabase.auth.signOut();
+        window.location.reload();
+      }
+    };
+
     return (
-      <div className="text-white text-center mt-20">
-        You are already signed in.
+      <div className="text-white text-center mt-20 space-y-4">
+        <h2 className="text-2xl font-bold">Welcome 👋</h2>
+
+        <p>
+          <span className="text-primary font-semibold">Name:</span> {name}
+        </p>
+
+        <p>
+          <span className="text-primary font-semibold">Email:</span> {email}
+        </p>
+
+        <p>
+          <span className="text-primary font-semibold">Status:</span>{" "}
+          {isVerified ? (
+            <span className="text-green-400">Verified ✅</span>
+          ) : (
+            <span className="text-yellow-400">Not Verified ⚠️</span>
+          )}
+        </p>
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-3 mt-6">
+          <Button variant="contained" color="primary" onClick={handleLogout}>
+            Logout
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={handleDeleteAccount}
+          >
+            Delete Account
+          </Button>
+        </div>
       </div>
     );
   }
