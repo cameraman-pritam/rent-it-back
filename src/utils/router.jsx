@@ -7,6 +7,7 @@ import Contribute from "../pages/contribute";
 import NotFound from "../pages/notfound";
 import SignUp from "../pages/auth/signup";
 import SignIn from "../pages/auth/signin";
+import Profile from "../pages/auth/profile";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
         children: [
           { path: "signup", element: <SignUp /> },
           { path: "signin", element: <SignIn /> },
+          { path: "profile", element: <Profile /> },
         ],
       },
     ],
