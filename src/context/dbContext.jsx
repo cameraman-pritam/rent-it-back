@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { supabase } from "../utils/supabase";
 
-const DbContext = createContext({});
+const DbContext = createContext(undefined);
 
 export const DbProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
