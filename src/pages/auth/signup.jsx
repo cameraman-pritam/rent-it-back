@@ -23,6 +23,7 @@ const SignUp = () => {
       console.error(error.message);
     }
   };
+
   return (
     <div className="bg-surface font-body text-on-surface selection:bg-primary/30 min-h-screen flex flex-col">
       <main className="grow flex items-center justify-center relative overflow-hidden px-6 py-20">
@@ -129,7 +130,7 @@ const SignUp = () => {
               </form>
 
               <div className="relative my-8">
-                <Divider className="border-white/5" />
+                <Divider className="border-outline/20" />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="bg-surface-container px-4 text-xs text-on-surface-variant font-medium tracking-widest uppercase">
                     Or continue with
@@ -143,7 +144,7 @@ const SignUp = () => {
                   fullWidth
                   startIcon={<GoogleIcon />}
                   className="bg-surface-container-high ghost-border py-3.5 rounded-xl text-on-surface font-medium hover:bg-surface-container-highest transition-colors active:scale-[0.98] normal-case border-none"
-                  sx={{ color: "#dde2f5" }}
+                  sx={{ color: "var(--color-on-surface)" }}
                 >
                   Google
                 </Button>

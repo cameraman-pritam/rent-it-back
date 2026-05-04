@@ -10,16 +10,19 @@ import {
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 py-16 px-4">
+    <div className="min-h-screen bg-surface text-on-surface py-16 px-4 font-body">
       <Container maxWidth="lg">
-        <Box className="text-center mb-20">
+        <Box className="text-left mb-20">
           <Typography
             variant="h2"
-            className="font-bold text-white mb-4 tracking-tight"
+            className="font-bold text-on-surface mb-4 tracking-tight"
           >
-            Reimagining <span className="text-teal-400">Ownership</span>
+            Reimagining <span className="text-primary">Ownership</span>
           </Typography>
-          <Typography variant="h6" className="text-slate-400 max-w-2xl mx-auto">
+          <Typography
+            variant="h6"
+            className="text-on-surface-variant max-w-2xl mx-auto"
+          >
             Rent-Back is a community-driven platform built on the principles of
             transparency, accessibility, and the freedom to share.
           </Typography>
@@ -32,11 +35,11 @@ const About = () => {
               <div>
                 <Typography
                   variant="h4"
-                  className="text-teal-400 font-semibold mb-4 flex items-center gap-3"
+                  className="text-primary font-semibold mb-4 flex items-center gap-3"
                 >
                   <TerminalIcon /> The Open Source Mission
                 </Typography>
-                <Typography className="text-slate-300 leading-relaxed text-lg">
+                <Typography className="text-on-surface-variant leading-relaxed text-lg">
                   Rent-Back isn't just an application; it's a public utility. We
                   believe that the tools we use to manage our daily lives should
                   be transparent and auditable. By keeping our codebase open, we
@@ -45,14 +48,14 @@ const About = () => {
                 </Typography>
               </div>
 
-              <Paper className="bg-slate-800/40 border border-teal-900/30 p-6 rounded-xl">
+              <Paper className="bg-surface-container border border-primary/30 p-6 rounded-xl">
                 <Typography
                   variant="h5"
-                  className="text-white font-medium mb-3 flex items-center gap-2"
+                  className="text-on-surface font-medium mb-3 flex items-center gap-2"
                 >
-                  <LawIcon className="text-teal-400" /> GPL v3.0 Licensed
+                  <LawIcon className="text-primary" /> GPL v3.0 Licensed
                 </Typography>
-                <Typography className="text-slate-400">
+                <Typography className="text-on-surface-variant">
                   We are committed to the{" "}
                   <strong>GNU General Public License</strong>. This ensures that
                   Rent-Back remains free software. Any derivatives must also be
@@ -66,19 +69,22 @@ const About = () => {
           {/* Developer Card */}
           <Grid item xs={12} md={5}>
             <div className="sticky top-24">
-              <Paper className="bg-[#1e293b] border border-slate-700 p-8 rounded-2xl text-center shadow-2xl">
-                <div className="w-24 h-24 bg-teal-500/20 rounded-full mx-auto mb-6 flex items-center justify-center border-2 border-teal-500">
-                  <Typography variant="h4" className="text-teal-400 font-bold">
+              <Paper className="bg-surface-container-high ghost-border p-8 rounded-2xl text-center shadow-2xl">
+                <div className="w-24 h-24 bg-primary/20 rounded-full mx-auto mb-6 flex items-center justify-center border-2 border-primary">
+                  <Typography variant="h4" className="text-primary font-bold">
                     CP
                   </Typography>
                 </div>
-                <Typography variant="h5" className="text-white font-bold mb-1">
+                <Typography
+                  variant="h5"
+                  className="text-on-surface font-bold mb-1"
+                >
                   cameraman-pritam
                 </Typography>
-                <Typography className="text-teal-500 font-medium mb-6">
+                <Typography className="text-primary font-medium mb-6">
                   Lead Developer & Visionary
                 </Typography>
-                <Typography className="text-slate-400 mb-8">
+                <Typography className="text-on-surface-variant mb-8">
                   Building digital solutions that prioritize user freedom. I
                   craft interfaces with precision and write code that belongs to
                   the community.
@@ -90,7 +96,7 @@ const About = () => {
                     target="_blank"
                     variant="contained"
                     startIcon={<GitHubIcon />}
-                    className="bg-slate-700 hover:bg-slate-600 normal-case py-3"
+                    className="bg-surface-container-highest text-on-surface hover:opacity-80 normal-case py-3"
                   >
                     Follow on GitHub
                   </Button>
@@ -99,7 +105,7 @@ const About = () => {
                     target="_blank"
                     variant="outlined"
                     startIcon={<InstagramIcon />}
-                    className="border-teal-500/50 text-teal-400 hover:border-teal-400 normal-case py-3"
+                    className="border border-primary/50 text-primary hover:border-primary normal-case py-3"
                   >
                     @cameraman.pritam
                   </Button>
@@ -108,20 +114,21 @@ const About = () => {
             </div>
           </Grid>
         </Grid>
-        <Box className="mt-24 pt-12 border-t border-slate-800 text-center">
+
+        <Box className="mt-24 pt-12 border-t ghost-border text-center">
           <Typography
             variant="h5"
-            className="text-white mb-6 flex items-center justify-center gap-2"
+            className="text-on-surface mb-6 flex items-center justify-center gap-2"
           >
-            <CommunityIcon className="text-teal-400" /> Want to contribute?
+            <CommunityIcon className="text-primary" /> Want to contribute?
           </Typography>
-          <Typography className="text-slate-400 mb-8 max-w-xl mx-auto">
+          <Typography className="text-on-surface-variant mb-8 max-w-xl mx-auto">
             Our repository is always looking for new perspectives. Whether it's
             code, design, or documentation, your help is welcome.
           </Typography>
           <Button
             size="large"
-            className="text-teal-400 border-teal-400 hover:bg-teal-400/10 px-10 border-2 font-bold"
+            className="text-primary border-primary hover:bg-primary/10 px-10 border-2 font-bold"
           >
             Join the Repo
           </Button>
