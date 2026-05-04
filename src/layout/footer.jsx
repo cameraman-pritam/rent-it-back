@@ -4,7 +4,7 @@ import { Container, Typography, Box } from "@mui/material";
 
 const Footer = () => {
   return (
-    <footer className="w-full py-12 border-t border-slate-800 bg-[#080e1b] text-[#dde2f5]">
+    <footer className="w-full py-12 border-t border-slate-800 bg-[#080e1b] text-on-surface">
       <Container maxWidth="xl">
         <div className="flex flex-col md:flex-row justify-between items-center gap-8">
           {/* Logo/Brand Section */}
@@ -24,31 +24,31 @@ const Footer = () => {
           <div className="flex flex-wrap justify-center gap-6 text-xs uppercase tracking-widest font-medium">
             <Link
               to="/about"
-              className="text-slate-400 hover:text-[#6dd9c3] transition-colors"
+              className="text-slate-400 hover:text-primary transition-colors"
             >
               About
             </Link>
             <Link
               to="/browse"
-              className="text-slate-400 hover:text-[#6dd9c3] transition-colors"
+              className="text-slate-400 hover:text-primary transition-colors"
             >
               Browse
             </Link>
             <Link
               to="/contribute"
-              className="text-slate-400 hover:text-[#6dd9c3] transition-colors"
+              className="text-slate-400 hover:text-primary transition-colors"
             >
               Contribute
             </Link>
             <a
               href="#"
-              className="text-slate-400 hover:text-[#6dd9c3] transition-colors"
+              className="text-slate-400 hover:text-primary transition-colors"
             >
               Privacy
             </a>
             <a
               href="#"
-              className="text-slate-400 hover:text-[#6dd9c3] transition-colors"
+              className="text-slate-400 hover:text-primary transition-colors"
             >
               Support
             </a>
